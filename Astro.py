@@ -18,17 +18,32 @@ hdulist = fits.open("/Users/annawilson/Documents/University/Physics/Third_Year/L
 pixelvalues = hdulist[0].data
 pixels = pixelvalues.flatten()
 
-plt.hist(pixels, 300, range = (3300,3600))
 
 #mphigh = ma.masked_where(pixels >=6000, pixels, copy=True)
+#plt.hist(mphigh.compressed(), 300, color = 'green', range=(3300,3600))
 
-mppos = ma.masked_where(pixelvalues[0:115][], pixelvalues, copy=True)
+def remove_edges(width, data):
+    
+    """
+    Removes edges of data with width
+    """
+    
+    mask = np.zeros(data.shape)
+    mask[:width,:] = 1
+    mask[-width:,:] = 1
+    mask[:,:width] = 1
+    mask[:,-width:] = 1
+
+    data_noedges = np.ma.masked_array(data, mask)
+    return data_noedges
+
+no_edges = remove_edges(115, pixelvalues)
+no_edgesf = no_edges.flatten()
 
 
 plt.figure(1)
-
-#plt.hist(mphigh.compressed(), 300, color = 'green', range=(3300,3600))
-plt.hist(mppos.compressed(), 300, color = 'blue', range=(3300,3600))
+plt.hist(pixels, 300, color = 'green', range=(20000,23000))
+plt.hist(no_edgesf.compressed(), 300, color = 'blue', range=(20000,23000))
 
 plt.xlabel('Counts')
 plt.ylabel('Number of pixels')
