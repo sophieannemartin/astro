@@ -17,18 +17,18 @@ pix_values = pixels.flatten()
 #Remove extreme values out
 pixelsf = pix_values[pix_values <= 3600]
 pixelsf = pixelsf[pixelsf >= 3300]
-
-plt.figure(0)
-n = plt.hist(pixelsf, 300, color='#a42b44', range=(3300,3600), label='unmasked')
+             
+# Plot histogram with data ignoring values where 3300 < value < 3600
+plt.figure('Histogram')
+plt.hist(pixelsf, 300, color='#a42b44', range=(3300,3600), label='unmasked')
 plt.xlabel('Counts')
 plt.ylabel('Number of pixels')
 plt.title('Histogram bins=300')
 
-
 def remove_edges(width, data):
     
     """
-    Removes edges assuming same width all around
+    Removes edges assuming same width all around, returns 2D array of data
     """
     
     mask = np.zeros(data.shape)
@@ -40,12 +40,12 @@ def remove_edges(width, data):
     data_noedges = np.ma.masked_array(data, mask)
     return data_noedges
 
-pixels_noedges = remove_edges(115, pixels).flatten()
+# Remove edges and selects only non-masked data in array using .compressed
+pixels_ne = remove_edges(115, pixels)
+pixels_nef = pixels_ne.flatten().compressed()
 
-n = plt.hist(pixels_noedges.compressed(), 300, color='#ff9900', 
-             range=(3300,3600), label='masked')
+plt.figure('Histogram')
+plt.hist(pixels_nef, 300, color='#ff9900', range=(3300,3600), label='masked')
 plt.xlabel('Counts')
-plt.ylabel('Number of pixels')
 plt.title('Histogram bins=300')
 plt.legend()
-
