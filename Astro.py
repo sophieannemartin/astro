@@ -19,6 +19,9 @@ hdulist = fits.open("/Users/annawilson/Documents/University/Physics/Third_Year/L
 pixelvalues = hdulist[0].data
 pixels = pixelvalues.flatten()
 
+plt.figure(1)
+plt.imshow(pixelvalues, origin='lower')
+plt.title('original image')
 
 #mphigh = ma.masked_where(pixels >=6000, pixels, copy=True)
 #plt.hist(mphigh.compressed(), 300, color = 'green', range=(3300,3600))
@@ -53,13 +56,14 @@ def remove_strip(x1, x2, y1, y2, data):
     data_nostrip = np.ma.masked_array(data, mask)
     return data_nostrip
     
-def remove_star(xy, r,data):
-    #y,x = np.ogrid[-a:r+a, -b:r+b] #this was code taken from online which doesn't work and I don't understand yet
-    circle = mpl.patches.Circle(xy,r)
-    mask = np.zeros(data.shape)
-    mask[circle] = 1
-    
-    data_nostar = np.ma.masked_array(data, mask)
+def remove_star(index,radius,data):
+    a,b = index
+    nx,ny = data.shape
+    y,x = np.ogrid[-a:nx-a,-b:ny-b]
+    mask = x*x + y*y <= radius*radius
+    data[mask] = 1
+
+    data_nostar = np.ma.masked_array(data,mask)
     return data_nostar
     
     
@@ -70,33 +74,19 @@ no_strip3 = remove_strip(970,978,2704,2835,no_strip2)
 no_strip4 = remove_strip(901,908,2222,2357,no_strip3)
 
 #removing bright stars using plt.circle
-no_star = remove_star((1426,3210),198,pixelvalues)
+no_star = remove_star((3210,1432), 198, no_strip4)
 
 #removing horizontal bleeding from main bleed from central star 
 #no_strip5 = remove_strip(1102,1652,426,428,no_strip4)
-#no_strip6 = remove_strip(,no_strip5)
-
-def combine_edits(edit):
-    
-    """
-    Combines edits to produce one new image to plot
-    """
-    
-    
-    
+#no_strip6 = remove_strip(,no_strip5)  
     
 
-plt.figure(1)
+plt.figure(2)
 plt.hist(pixels, 300, color = 'green', range = (3300,3600))
 plt.hist(no_edgesf.compressed(), 300, color = 'blue', range = (3300,3600))
-
 plt.xlabel('Counts')
 plt.ylabel('Number of pixels')
 plt.title('Histogram 300 bins')
-
-plt.figure(2)
-plt.imshow(pixelvalues, origin='lower')
-plt.title('original image')
 
 plt.figure(3)
 plt.imshow(no_star, origin = 'lower')
