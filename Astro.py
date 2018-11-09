@@ -72,6 +72,17 @@ def remove_star(index,radius,data):
     data_nostar = np.ma.masked_array(data,mask)
     return data_nostar
     
+def remove_triangle(index,,data):
+    a,b = index
+    nx,ny = data.shape
+    y,x = np.ogrid[-a:nx-a, -b:ny-b]
+    mask = 
+    
+
+    data_notriangle = np.ma.masked_array(data,mask)
+    return data_notriangle
+    
+    
     
 #removing vertical bleeding from stars
 no_strip1 = remove_strip(1426,1447,0,4608,no_edges)
@@ -85,8 +96,10 @@ no_star1 = remove_star((3210,1432), 198, no_strip5)
 no_star2 = remove_star((3322,774), 40 ,no_star1)
 no_star3 = remove_star((2773,972),33, no_star2)
 no_star4 = remove_star((2284,906), 29,no_star3)
+no_star5 = remove_star((3760,2135), 28, no_star4)
 
 #removing horizontal bleeding from main bleed from central star 
+no_triagnle1 = remove_triangle(([1102,427],[1430,427],[1430,477]), no_star5)
 #no_strip5 = remove_strip(1102,1652,426,428,no_star)
 #no_strip6 = remove_strip(,no_strip5)
     
@@ -99,7 +112,7 @@ plt.ylabel('Number of pixels')
 plt.title('Histogram 300 bins')
 
 plt.figure(3)
-plt.imshow(no_star4, norm = LogNorm(), origin = 'lower')
+plt.imshow(no_triangle1, norm = LogNorm(), origin = 'lower')
 plt.title('edited image')
 
 def detection(data):
@@ -109,9 +122,10 @@ def detection(data):
     detected = np.reshape(mphigh2, data.shape)
     return detected
 
-detected = detection(no_star4)
+remove_background = detection(no_triangle1)
 
 plt.figure(4)
-plt.imshow(detected, origin = 'lower')
+plt.imshow(remove_background, origin = 'lower')
 
 plt.show()
+
