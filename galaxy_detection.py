@@ -5,8 +5,6 @@ Created on Mon Oct 29 10:49:09 2018
 
 @author: sophie
 """
-
-import astropy
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -16,11 +14,12 @@ from astropy.io import fits
 import numpy.ma as ma
 from matplotlib.colors import LogNorm
 
-hdulist = fits.open("/Users/sophie/Documents/University/Physics/Third_Year/Labs/Astro/A1_mosaic.fits")
+hdulist = fits.open("/Users/sophie/Documents/Work/Year 3/Lab/Astro/A1_mosaic.fits")
 pixelvalues = hdulist[0].data
 pixels = pixelvalues.flatten()
 
 plt.figure(1)
+plt.subplot(1,2,1)
 plt.imshow(pixelvalues, norm = LogNorm(), origin='lower')
 plt.title('original image')
 
@@ -90,17 +89,19 @@ no_star4 = remove_star((2284,906), 29,no_star3)
 #no_strip5 = remove_strip(1102,1652,426,428,no_star)
 #no_strip6 = remove_strip(,no_strip5)
     
+plt.subplot(1,2,2)
+plt.imshow(no_star4, norm = LogNorm(), origin = 'lower')
+plt.title('edited image')
 
+'''
 plt.figure(2)
 plt.hist(pixels, 300, color = 'green', range = (3300,3600))
 plt.hist(no_edgesf.compressed(), 300, color = 'blue', range = (3300,3600))
 plt.xlabel('Counts')
 plt.ylabel('Number of pixels')
 plt.title('Histogram 300 bins')
+'''
 
-plt.figure(3)
-plt.imshow(no_star4, norm = LogNorm(), origin = 'lower')
-plt.title('edited image')
 
 def detection(data):
     dataf = data.flatten()
@@ -111,7 +112,7 @@ def detection(data):
 
 detected = detection(no_star4)
 
-plt.figure(4)
+plt.figure()
 plt.imshow(detected, origin = 'lower')
 
 plt.show()
