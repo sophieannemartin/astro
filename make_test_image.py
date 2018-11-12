@@ -5,6 +5,8 @@ from matplotlib.patches import Circle
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 
+np.random.seed(45)
+
 fig, ax = plt.subplots()
 
 N = 2 # Number of circles required
