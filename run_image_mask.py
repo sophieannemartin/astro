@@ -9,6 +9,8 @@ from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 from astropy.io import fits
 import mask_image as image
+import numpy as np
+from scipy.optimize import curve_fit
 
 hdulist = fits.open("/Users/sophie/Documents/Work/Year 3/Lab/Astro/A1_mosaic.fits")
 pixelvalues = hdulist[0].data
@@ -42,25 +44,36 @@ no_star4 = image.remove_star((2284,906), 29,no_star3)
 #removing horizontal bleeding from main bleed from central star 
 #no_strip5 = remove_strip(1102,1652,426,428,no_star)
 #no_strip6 = remove_strip(,no_strip5)
-    
+
 plt.subplot(1,2,2)
 plt.imshow(no_star4, norm = LogNorm(), origin = 'lower')
 plt.title('edited image')
 
-data_only  = image.remove_background(no_star4)
+mask = no_star4.flatten() < 3600
+mask = mask > 3300
+no_star4m = np.ma.masked_array(no_star4, mask).compressed()
 
-plt.figure(2)
-plt.imshow(data_only, norm = LogNorm(), origin = 'lower')
+hist, bin_edges = np.histogram(no_star4m,bins=300, range=(3300,3600))
+bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
 
-'''
-plt.figure(3)
-plt.hist(pixels, 300, color = 'green', range = (3300,3600))
-plt.hist(no_edgesf.compressed(), 300, color = 'blue', range = (3300,3600))
+# Define model function to be used to fit to the data above:
+def gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2*sigma**2))
+
+# p0 is the initial guess for the fitting coefficients (A, mu and sigma above)
+p0 = [32300, 3420, 10]
+
+coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0)
+
+# Get the fitted curve
+hist_fit = gauss(bin_centres, *coeff)
+
+plt.figure()
+plt.hist(no_star4m, bins=300,range=(3300,3600), label='Histogram')
+plt.plot(bin_centres, hist_fit, label='Fitted data')
+plt.legend()
 plt.xlabel('Counts')
 plt.ylabel('Number of pixels')
-plt.title('Histogram 300 bins')
-'''
-plt.figure(4)
-plt.hist(data_only.compressed(), 10000, color = 'blue', 
-         range=(min(data_only.compressed()), max(data_only.compressed())))
+plt.show()
 
