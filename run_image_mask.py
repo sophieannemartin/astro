@@ -12,7 +12,7 @@ import functions.image_functions as image
 import numpy as np
 from scipy.optimize import curve_fit
 
-hdulist = fits.open("/Users/sophie/Documents/Work/Year 3/Lab/Astro/A1_mosaic.fits")
+hdulist = fits.open("A1_mosaic.fits")
 pixelvalues = hdulist[0].data
 pixels = pixelvalues.flatten()
 
