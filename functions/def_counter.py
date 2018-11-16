@@ -8,4 +8,5 @@ Created on Mon Nov 12 11:13:49 2018
 
 import mask_image as image
 
-data = image.no_star4
+data = image.no_background
+

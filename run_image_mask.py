@@ -20,6 +20,7 @@ no_edges = image.remove_edges(115, pixelvalues)
 no_edgesf = no_edges.flatten()
 
 plt.figure(1)
+#plotting the original image
 plt.subplot(1,2,1)
 plt.imshow(pixelvalues, norm = LogNorm(), origin='lower')
 plt.title('original image')
@@ -58,6 +59,7 @@ no_block1 = image.remove_strip(1526,1538,117,139,no_horiz11)
 no_block2 = image.remove_strip(1642,1647,334,354,no_block1)
 no_block3 = image.remove_strip(1027,1042,424,451,no_block2)
 
+#plotting the masked image
 plt.subplot(1,2,2)
 plt.imshow(no_block3, norm = LogNorm(), origin = 'lower')
 plt.title('edited image')
@@ -69,7 +71,7 @@ no_block3m = np.ma.masked_array(no_block3, mask).compressed()
 hist, bin_edges = np.histogram(no_block3m,bins=300, range=(3300,3600))
 bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
 
-# Define model function to be used to fit to the data above:
+# Define model function to be used to fit to the data above
 def gauss(x, *p):
     A, mu, sigma = p
     return A*np.exp(-(x-mu)**2/(2*sigma**2))
@@ -82,10 +84,15 @@ sigma = coeff[2]
 
 # Get the fitted curve
 hist_fit = gauss(bin_centres, *coeff)
-plt.figure()
+plt.figure(2)
 plt.hist(no_block3m, bins=300,range=(3300,3600), label='Histogram')
 plt.plot(bin_centres, hist_fit, label='Fitted data')
 plt.plot([mu+2*sigma,mu+2*sigma], [0, max(hist)], '--')
 plt.legend()
 plt.xlabel('Counts')
 plt.ylabel('Number of pixels')
+
+#Removing background
+plt.figure(3)
+no_background = image.remove_background(no_block3,mu+2*sigma)
+plt.imshow(no_background, norm=LogNorm(), origin = 'lower')

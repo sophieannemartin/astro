@@ -54,9 +54,9 @@ def remove_star(index,radius,data):
     data_nostar = np.ma.masked_array(data,mask)
     return data_nostar
     
-def remove_background(data):
+def remove_background(data,mean):
     dataf = data.flatten()
-    mphigh = ma.masked_where(dataf <= np.mean(data), dataf)
+    mphigh = ma.masked_where(dataf <= mean, dataf)
     no_background = np.reshape(mphigh, data.shape)
     return no_background
   
