@@ -76,7 +76,6 @@ def gauss(x, *p):
 
 # p0 is the initial guess for the fitting coefficients (A, mu and sigma above)
 p0 = [32300, 3420, 10]
-
 coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0)
 mu = coeff[1]
 sigma = coeff[2]
@@ -86,8 +85,7 @@ hist_fit = gauss(bin_centres, *coeff)
 plt.figure()
 plt.hist(no_block3m, bins=300,range=(3300,3600), label='Histogram')
 plt.plot(bin_centres, hist_fit, label='Fitted data')
+plt.plot([mu+2*sigma,mu+2*sigma], [0, max(hist)], '--')
 plt.legend()
 plt.xlabel('Counts')
 plt.ylabel('Number of pixels')
-
-
