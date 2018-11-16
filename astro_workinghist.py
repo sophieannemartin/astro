@@ -133,6 +133,10 @@ no_block3 = remove_strip(1027,1042,424,451,no_block2)
 
 no_block3f = no_block3.flatten()
 no_block3fs = [k for k in no_block3f if 3300<k<3600]
+#no_block3fs = []
+#for i in no_block3f:
+#    if i < 3300 and i > 3600:
+#        no_block3fs.append(i)
 
 #plt.figure(1)
 #plt.imshow(pixelvalues, norm = LogNorm(), origin='lower')
@@ -140,7 +144,7 @@ no_block3fs = [k for k in no_block3f if 3300<k<3600]
 
 plt.figure(2)
 #plt.hist(pixels, 300, color = 'green', normed=1, range = (3300,3600))
-n,bins,patches=plt.hist(no_block3f.compressed(), 300, color = 'blue', normed=True, range = (3300,3600))
+n,bins,patches=plt.hist(no_block3f.compressed(), 300, color = 'blue', normed=1, range = (3300,3600))
 plt.xlabel('Counts')
 plt.ylabel('Number of pixels')
 plt.title('Histogram 300 bins')
