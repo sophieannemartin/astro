@@ -8,7 +8,7 @@ Created on Mon Nov 12 15:10:58 2018
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 from astropy.io import fits
-import mask_image as image
+import image_functions as image
 import numpy as np
 from scipy.optimize import curve_fit
 
@@ -30,9 +30,10 @@ no_strip2 = image.remove_strip(772,779,3203,3417,no_strip1)
 no_strip3 = image.remove_strip(970,978,2704,2835,no_strip2)
 no_strip4 = image.remove_strip(901,908,2222,2357,no_strip3)
 no_strip5 = image.remove_strip(2131,2137,3705,3805,no_strip4)
+no_strip6 = image.remove_strip(2130,2136,2280,2340,no_strip5)
 
 #removing bright stars using plt.circle
-no_star1 = image.remove_star((3210,1432), 198, no_strip5)
+no_star1 = image.remove_star((3210,1432), 198, no_strip6)
 no_star2 = image.remove_star((3322,774), 40 ,no_star1)
 no_star3 = image.remove_star((2773,972),33, no_star2)
 no_star4 = image.remove_star((2284,906), 29,no_star3)
