@@ -133,28 +133,40 @@ no_block2 = remove_strip(1642,1647,334,354,no_block1)
 no_block3 = remove_strip(1027,1042,424,451,no_block2)
 
 no_block3f = no_block3.flatten()
-no_block3fs = [k for k in no_block3f if 3300<k<3600]
 
 #plt.figure(1)
 #plt.imshow(pixelvalues, norm = LogNorm(), origin='lower')
 #plt.title('original image')
 
+
+mask = no_block3f < 3600
+mask = mask > 3300
+no_block3m = np.ma.masked_array(no_block3, mask).compressed()
+
+hist, bin_edges = np.histogram(no_block3m,bins=300, range=(3300,3600))
+bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
+
+# Define model function to be used to fit to the data above:
+def gauss(x, *p):
+    A, mu, sigma = p
+    return A*np.exp(-(x-mu)**2/(2*sigma**2))
+
+# p0 is the initial guess for the fitting coefficients (A, mu and sigma above)
+p0 = [32300, 3420, 10]
+coeff, var_matrix = curve_fit(gauss, bin_centres, hist, p0=p0)
+
+# Get the fitted curve
+hist_fit = gauss(bin_centres, *coeff)
+
 plt.figure(2)
-#plt.hist(pixels, 300, color = 'green', normed=1, range = (3300,3600))
-n,bins,patches=plt.hist(no_block3f.compressed(), 300, color = 'blue', normed=True, range = (3300,3600))
+#plt.hist(pixels, 300, color = 'green', range = (3300,3600))
+#plt.hist(no_edgesf.compressed(), 300, color = 'blue', range = (3300,3600))
+plt.hist(no_block3m, bins=300,range=(3300,3600), label='Histogram')
+plt.plot(bin_centres, hist_fit, label='Fitted data')
+plt.legend()
 plt.xlabel('Counts')
 plt.ylabel('Number of pixels')
 plt.title('Histogram 300 bins')
-
-#fitting a gaussian to the histogram
-def gauss(data, mean, sigma):
-    return 1/(sigma*np.sqrt(2*np.pi))*np.exp(-1/2*((data-mean)/sigma)**2)
-
-mu = np.mean(no_block3fs)
-sigma = np.sqrt(np.var(no_block3fs))
-y = [gauss(x, mu, sigma) for x in bins]
-plt.plot(bins,y, 'r--', linewidth=2)
-
 
 plt.figure(3)
 plt.imshow(no_block3, norm = LogNorm(), origin = 'lower')
