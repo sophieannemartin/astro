@@ -94,5 +94,11 @@ plt.ylabel('Number of pixels')
 
 #Removing background
 plt.figure(3)
+plt.title('Data Removed')
 no_background = image.remove_background(no_block3,mu+2*sigma)
 plt.imshow(no_background, norm=LogNorm(), origin = 'lower')
+plt.xlabel('Counts')
+plt.ylabel('Number of pixels')
+
+plt.figure(4)
+plt.hist(no_background.compressed(), bins=300, range=(3300, 3600))

@@ -60,6 +60,7 @@ def remove_background(data,mean):
     no_background = np.reshape(mphigh, data.shape)
     return no_background
   
+    
 def remove_exp_bleeding1(x1,x2,y0,a,lamb,data):
     """
     Removes a section of data in exponential shape
@@ -74,6 +75,7 @@ def remove_exp_bleeding1(x1,x2,y0,a,lamb,data):
     data_noexp = np.ma.masked_array(data,mask)
     return data_noexp
 
+
 def remove_exp_bleeding2(x1,x2,y0,a,lamb,data):
     mask = np.zeros(data.shape)
     x = range(0,x1-x2,-1)
@@ -84,4 +86,27 @@ def remove_exp_bleeding2(x1,x2,y0,a,lamb,data):
     
     data_noexp = np.ma.masked_array(data,mask)
     return data_noexp
+
+def max_pixel(data):
+    max_val = data.argmax()
+    return max_val
+
+def find_next_brightest(data):
+    val = max_pixel(data)
+    co_ords = np.unravel_index(val, data.shape)
+    tmpc = make_circle(co_ords, data, 100)
+    plt.imshow(tmpc, norm=LogNorm(), origin='lower')
+    return co_ords
+
+
+def make_circle(co_ordinates, data, r):
+    # In the form y, x
+    a,b = co_ordinates[1], co_ordinates[0]
+    nx,ny = data.shape
+    y,x = np.ogrid[-a:nx-a,-b:ny-b]
+    mask = x*x + y*y >= r*r
+    data[mask] = 1
+    tmpcircle = np.ma.masked_array(data,mask)
+    return tmpcircle
+    
     
