@@ -12,6 +12,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 from scipy.stats import norm
+from scipy.optimize import curve_fit
 from astropy.io import fits
 import numpy.ma as ma
 from matplotlib.colors import LogNorm
