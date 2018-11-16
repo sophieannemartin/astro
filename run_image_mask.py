@@ -24,10 +24,6 @@ plt.subplot(1,2,1)
 plt.imshow(pixelvalues, norm = LogNorm(), origin='lower')
 plt.title('original image')
 
-#mphigh = ma.masked_where(pixels >=6000, pixels, copy=True)
-#plt.hist(mphigh.compressed(), 300, color = 'green', range=(3300,3600))
-
-
 #removing vertical bleeding from stars
 no_strip1 = image.remove_strip(1426,1447,0,4608,no_edges)
 no_strip2 = image.remove_strip(772,779,3203,3417,no_strip1)
@@ -40,10 +36,28 @@ no_star1 = image.remove_star((3210,1432), 198, no_strip5)
 no_star2 = image.remove_star((3322,774), 40 ,no_star1)
 no_star3 = image.remove_star((2773,972),33, no_star2)
 no_star4 = image.remove_star((2284,906), 29,no_star3)
+no_star5 = image.remove_star((3759,2133),28,no_star4)
+no_star6 = image.remove_star((2312,2131), 26, no_star5)
+
+no_star6f = no_star6.flatten()
 
 #removing horizontal bleeding from main bleed from central star 
-#no_strip5 = remove_strip(1102,1652,426,428,no_star)
-#no_strip6 = remove_strip(,no_strip5)
+no_horiz1 = image.remove_exp_bleeding1(1447,1651,426,70,-0.018,no_star6)
+no_horiz2 = image.remove_exp_bleeding2(1102,1429,426,70,0.01,no_horiz1)
+no_horiz3 = image.remove_exp_bleeding1(1442,1702,313,92,-0.01,no_horiz2)
+no_horiz4 = image.remove_exp_bleeding2(1019,1430,313,55,0.008,no_horiz3)
+no_horiz5 = image.remove_exp_bleeding1(1441,1476,231,59,-0.07,no_horiz4)
+no_horiz6 = image.remove_exp_bleeding2(1390,1431,231,40,0.03,no_horiz5)
+no_horiz7 = image.remove_exp_bleeding1(1439,1471,216,40,-0.07,no_horiz6)
+no_horiz8 = image.remove_exp_bleeding2(1398,1429,216,40,0.08,no_horiz7)
+no_horiz9 = image.remove_exp_bleeding1(1439,1524,123,60,-0.03,no_horiz8)
+no_horiz10 = image.remove_exp_bleeding2(1290,1430,123,60,0.025,no_horiz9)
+no_horiz11 = image.remove_strip(1390,1467,117,123,no_horiz10)
+
+#removing misc blocks of saturation
+no_block1 = image.remove_strip(1526,1538,117,139,no_horiz11)
+no_block2 = image.remove_strip(1642,1647,334,354,no_block1)
+no_block3 = image.remove_strip(1027,1042,424,451,no_block2)
 
 plt.subplot(1,2,2)
 plt.imshow(no_star4, norm = LogNorm(), origin = 'lower')

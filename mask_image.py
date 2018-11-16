@@ -59,3 +59,29 @@ def remove_background(data):
     mphigh = ma.masked_where(dataf <= np.mean(data), dataf)
     no_background = np.reshape(mphigh, data.shape)
     return no_background
+  
+def remove_exp_bleeding1(x1,x2,y0,a,lamb,data):
+    """
+    Removes a section of data in exponential shape
+    """
+    mask = np.zeros(data.shape)         
+    x = range(0,x2-x1)
+    for i in x: 
+        y = a*np.exp(i*lamb)
+        y = int(round(y))
+        mask[y0:y+y0,i+x1] = 1
+    
+    data_noexp = np.ma.masked_array(data,mask)
+    return data_noexp
+
+def remove_exp_bleeding2(x1,x2,y0,a,lamb,data):
+    mask = np.zeros(data.shape)
+    x = range(0,x1-x2,-1)
+    for i in x:
+        y = a*np.exp(i*lamb)
+        y = int(round(y))
+        mask[y0:y+y0,i+x2] = 1
+    
+    data_noexp = np.ma.masked_array(data,mask)
+    return data_noexp
+    
