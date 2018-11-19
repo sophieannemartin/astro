@@ -92,10 +92,9 @@ def max_pixel(data):
     return max_val
 
 def find_next_brightest(data):
-    val = max_pixel(data)
-    co_ords = np.unravel_index(val, data.shape)
-    tmpc = make_circle(co_ords, data, 100)
-    plt.imshow(tmpc, norm=LogNorm(), origin='lower')
+    co_ords = np.unravel_index(data.argmax(), data.shape)
+    tmpc = make_circle(co_ords, data, 10)
+    plt.imshow(tmpc, origin='lower')
     return co_ords
 
 
@@ -105,8 +104,9 @@ def make_circle(co_ordinates, data, r):
     nx,ny = data.shape
     y,x = np.ogrid[-a:nx-a,-b:ny-b]
     mask = x*x + y*y >= r*r
-    data[mask] = 1
-    tmpcircle = np.ma.masked_array(data,mask)
+    tmp = np.copy(data)
+    tmp[mask] = 1
+    tmpcircle = np.ma.masked_array(tmp,mask)
     return tmpcircle
     
     
