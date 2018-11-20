@@ -124,8 +124,12 @@ def bin_data(co_ordinates, data, r):
     return data
 
 def locate_centre(data, x, y):
-    x_mid = scan_horizontal(data, x, y)
-    y_mid = scan_vertical(data, x_mid, y)
+    left, right = scan_horizontal(data, x, y)
+    mid = int((right-left)/2)
+    x_mid = left+mid
+    top, bottom = scan_vertical(data, x_mid, y)
+    mid = int((top-bottom)/2)
+    y_mid = bottom+mid
     return x_mid, y_mid
 
 def count_galaxies(data):
@@ -155,7 +159,11 @@ def count_galaxies(data):
 
 # Zooming out function before counting an object MAIN FUNCTION
 def find_radius(data, xc, yc, brightness):
+   """
+   WORK ON THE UPDATING OF DATA WHEN BINNING SINCE BIN DATA 
+   CREATES ZEROS IN THE TMP CIRCLE ARRAYY SINCE IT COPIES DATA?
    
+   """
    r = 1
    tmp = np.copy(data)
    a,b = xc, yc
@@ -167,9 +175,10 @@ def find_radius(data, xc, yc, brightness):
    
    # Define data inside the circle as a temp searching area
    while tmpcircle.__contains__(0) == False:
+       print(r, tmpcircle.__contains__(0))
        r+=1
        tmp = np.copy(data)
-       a,b = xc, yc
+       a,b = yc, xc
        nx,ny = data.shape
        y,x = np.ogrid[-a:nx-a,-b:ny-b]
        mask = x*x + y*y >= r*r
@@ -178,16 +187,46 @@ def find_radius(data, xc, yc, brightness):
 
    return r
     
-def count_galaxies_t(data):
+def count_galaxies_variabler(data):
     
     fig, ax = plt.subplots(figsize=(10,8))
     ax.imshow(data, norm=LogNorm(), origin='lower')
     pos = find_next_brightest(data)
     brightest = data[pos[0], pos[1]]
     count = 0
-    r = 30
     
     while brightest > 0:
+
+        pos = find_next_brightest(data)
+        brightest = data[pos[0], pos[1]]
+        if brightest == 0:
+            break
+        else:
+            yc, xc = locate_centre(data, pos[0], pos[1])
+            r = find_radius(data, xc, yc, brightest)
+            if r==1:
+                c = plt.Circle((xc,yc), r, color='blue', fill=False)
+                ax.add_artist(c)
+                data = bin_data((xc, yc), data, r)
+            
+            else:
+                c = plt.Circle((xc,yc), r, color='red', fill=False)
+                ax.add_artist(c)
+                data = bin_data((xc, yc), data, r)
+                count+=1
+            
+    return count, data
+
+    
+def count_galaxies_fixedr(data, r, bckg):
+    
+    fig, ax = plt.subplots(figsize=(10,8))
+    ax.imshow(data, norm=LogNorm(), origin='lower')
+    pos = find_next_brightest(data)
+    brightest = data[pos[0], pos[1]]
+    count = 0
+    
+    while brightest > bckg:
 
         pos = find_next_brightest(data)
         brightest = data[pos[0], pos[1]]
@@ -199,7 +238,7 @@ def count_galaxies_t(data):
             ax.add_artist(c)
             data = bin_data((xc, yc), data, r)
             count+=1
-            
+        
     return count, data
         
  
@@ -214,9 +253,7 @@ def scan_horizontal(data, current_x, current_y):
     while data[cursor_l,y] != 0:
         cursor_l -= 1
         
-    mid = int((cursor_r-cursor_l)/2)
-    midpointx = cursor_l+mid
-    return midpointx
+    return cursor_r, cursor_l
 
 
 def scan_vertical(data, current_x, current_y):
@@ -229,8 +266,6 @@ def scan_vertical(data, current_x, current_y):
     
     while data[x, cursor_d] != 0:
         cursor_d -= 1
-        
-    mid = int((cursor_u-cursor_d)/2)
-    midpointy = cursor_d+mid
-    return midpointy
+    
+    return cursor_u, cursor_d
     

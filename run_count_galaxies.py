@@ -15,3 +15,5 @@ from run_image_mask import no_background
 
 galaxies = no_background.filled(0)
 plt.imshow(galaxies, norm=LogNorm(), origin='lower')
+
+count = image.count_galaxies_fixedr(galaxies, 30, 3450) # 4758
