@@ -162,7 +162,6 @@ def find_radius(data, xc, yc, brightness):
    """
    WORK ON THE UPDATING OF DATA WHEN BINNING SINCE BIN DATA 
    CREATES ZEROS IN THE TMP CIRCLE ARRAYY SINCE IT COPIES DATA?
-   
    """
    r = 1
    tmp = np.copy(data)
@@ -175,7 +174,6 @@ def find_radius(data, xc, yc, brightness):
    
    # Define data inside the circle as a temp searching area
    while tmpcircle.__contains__(0) == False:
-       print(r, tmpcircle.__contains__(0))
        r+=1
        tmp = np.copy(data)
        a,b = yc, xc
@@ -184,11 +182,15 @@ def find_radius(data, xc, yc, brightness):
        mask = x*x + y*y >= r*r
        tmp[mask] = 1
        tmpcircle = np.ma.masked_array(tmp,mask)
-
+       
    return r
     
+#def calc_magnitude(x,y,radius,localbkgd = bckg, ZPinst=ZPinst):
+"DEFINE THE MAGNITUDES USING THEORY EQNS"
+
 def count_galaxies_variabler(data):
     
+    data_o = data
     fig, ax = plt.subplots(figsize=(10,8))
     ax.imshow(data, norm=LogNorm(), origin='lower')
     pos = find_next_brightest(data)
@@ -203,12 +205,11 @@ def count_galaxies_variabler(data):
             break
         else:
             yc, xc = locate_centre(data, pos[0], pos[1])
-            r = find_radius(data, xc, yc, brightest)
+            r = find_radius(data_o, xc, yc, brightest)
             if r==1:
                 c = plt.Circle((xc,yc), r, color='blue', fill=False)
                 ax.add_artist(c)
                 data = bin_data((xc, yc), data, r)
-            
             else:
                 c = plt.Circle((xc,yc), r, color='red', fill=False)
                 ax.add_artist(c)

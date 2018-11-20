@@ -18,5 +18,5 @@ def remove_background(data, bckg):
 nb = remove_background(colorvalues, 239)
 plt.figure()
 plt.imshow(nb, norm=LogNorm(), origin='lower')
-count, data = funcs.count_galaxies_fixedr(nb, 30, 0) # Set the fixed r and background value
+count, data = funcs.count_galaxies_variabler(nb) # Set the fixed r and background value
 plt.show()
