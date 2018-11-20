@@ -14,16 +14,9 @@ from scipy.optimize import curve_fit
 
 hdulist = fits.open("A1_mosaic.fits")
 pixelvalues = hdulist[0].data
-pixels = pixelvalues.flatten()
 
 no_edges = image.remove_edges(115, pixelvalues)
 no_edgesf = no_edges.flatten()
-
-plt.figure(1)
-#plotting the original image
-plt.subplot(1,2,1)
-plt.imshow(pixelvalues, norm = LogNorm(), origin='lower')
-plt.title('original image')
 
 #removing vertical bleeding from stars
 no_strip1 = image.remove_strip(1426,1447,0,4608,no_edges)
@@ -59,16 +52,11 @@ no_block1 = image.remove_strip(1526,1538,117,139,no_horiz11)
 no_block2 = image.remove_strip(1642,1647,334,354,no_block1)
 no_block3 = image.remove_strip(1027,1042,424,451,no_block2)
 
-#plotting the masked image
-plt.subplot(1,2,2)
-plt.imshow(no_block3, norm = LogNorm(), origin = 'lower')
-plt.title('edited image')
-
 mask = no_block3.flatten() < 3600
 mask = mask > 3300
 no_block3m = np.ma.masked_array(no_block3, mask).compressed()
 
-hist, bin_edges = np.histogram(no_block3m,bins=300, range=(3300,3600))
+hist, bin_edges = np.histogram(no_block3m, bins=300, range=(3300,3600))
 bin_centres = (bin_edges[:-1] + bin_edges[1:])/2
 
 # Define model function to be used to fit to the data above
@@ -84,21 +72,34 @@ sigma = coeff[2]
 
 # Get the fitted curve
 hist_fit = gauss(bin_centres, *coeff)
-plt.figure(2)
-plt.hist(no_block3m, bins=300,range=(3300,3600), label='Histogram')
-plt.plot(bin_centres, hist_fit, label='Fitted data')
-plt.plot([mu+2*sigma,mu+2*sigma], [0, max(hist)], '--')
-plt.legend()
-plt.xlabel('Counts')
-plt.ylabel('Number of pixels')
+no_background = image.remove_background2(no_block3,mu+2*sigma)
 
-#Removing background
-plt.figure(3)
-plt.title('Data Removed')
-no_background = image.remove_background(no_block3,mu+2*sigma)
-plt.imshow(no_background, norm=LogNorm(), origin = 'lower')
-plt.xlabel('Counts')
-plt.ylabel('Number of pixels')
+def view_image_masked():
+    plt.figure(1)
+    #plotting the original image
+    plt.subplot(1,2,1)
+    plt.imshow(pixelvalues, norm = LogNorm(), origin='lower')
+    plt.title('original image')
 
-plt.figure(4)
-plt.hist(no_background.compressed(), bins=300, range=(3300, 3600))
+    #plotting the masked image
+    plt.subplot(1,2,2)
+    plt.imshow(no_block3, norm = LogNorm(), origin = 'lower')
+    plt.title('edited image')
+    
+    plt.figure(2)
+    plt.hist(no_block3m, bins=300,range=(3300,3600), label='Histogram')
+    plt.plot(bin_centres, hist_fit, label='Fitted data')
+    plt.plot([mu+2*sigma,mu+2*sigma], [0, max(hist)], '--')
+    plt.legend()
+    plt.xlabel('Counts')
+    plt.ylabel('Number of pixels')
+    
+    #Removing background based on mean +- 2 standard deviations away
+    plt.figure(3)
+    plt.title('Data Removed')
+    plt.imshow(no_background, norm=LogNorm(), origin = 'lower')
+    plt.xlabel('Counts')
+    plt.ylabel('Number of pixels')
+    
+    plt.figure(4)
+    plt.hist(no_background.compressed(), bins=300, range=(3300, 3600))

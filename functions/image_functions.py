@@ -7,9 +7,9 @@ Galaxy detection function definitions
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import numpy.ma as ma
 from matplotlib.colors import LogNorm
+import matplotlib.pyplot as plt
 
 def remove_edges(width, data):
     
@@ -59,7 +59,12 @@ def remove_background(data,mean):
     mphigh = ma.masked_where(dataf <= mean, dataf)
     no_background = np.reshape(mphigh, data.shape)
     return no_background
-  
+
+def remove_background2(data, mean):
+    no_bckg = data.copy()
+    no_bckg[no_bckg <= mean] = 0
+    return no_bckg
+
     
 def remove_exp_bleeding1(x1,x2,y0,a,lamb,data):
     """
@@ -87,14 +92,14 @@ def remove_exp_bleeding2(x1,x2,y0,a,lamb,data):
     data_noexp = np.ma.masked_array(data,mask)
     return data_noexp
 
+
 def max_pixel(data):
     max_val = data.argmax()
     return max_val
 
+
 def find_next_brightest(data):
-    co_ords = np.unravel_index(data.argmax(), data.shape)
-    tmpc = make_circle(co_ords, data, 10)
-    plt.imshow(tmpc, origin='lower')
+    co_ords = np.unravel_index(np.argmax(data), data.shape)
     return co_ords
 
 
@@ -108,5 +113,124 @@ def make_circle(co_ordinates, data, r):
     tmp[mask] = 1
     tmpcircle = np.ma.masked_array(tmp,mask)
     return tmpcircle
+
+def bin_data(co_ordinates, data, r):
+    a,b = co_ordinates[1], co_ordinates[0]
+    nx,ny = data.shape
+    y,x = np.ogrid[-a:nx-a,-b:ny-b]
+    mask = x*x + y*y <= r*r # get rid of current circle
+    data[mask] = 1
+    data = np.ma.masked_array(data,mask)
+    return data
+
+def locate_centre(data, x, y):
+    x_mid = scan_horizontal(data, x, y)
+    y_mid = scan_vertical(data, x_mid, y)
+    return x_mid, y_mid
+
+def count_galaxies(data):
     
+    pos = find_next_brightest(data) # x and y are backwards
+    brightest = data[pos[0], pos[1]]
+    count = 0
+    r = 1
+    while brightest > 3450:
+
+        pos = find_next_brightest(data)
+        brightest = data[pos[0], pos[1]]
+        yc, xc = locate_centre(data, pos[0], pos[1])
+        search_area = make_circle((xc,yc), data, r)
+        
+        if ((len(search_area.compressed()))-np.count_nonzero(search_area.compressed())) != 0:
+            print('object found')
+            count+= 1
+            data = bin_data(pos, data, r)
+        
+        else:
+            print(search_area.compressed())
+            r += 1
+            continue
+            
+    return count
+
+# Zooming out function before counting an object MAIN FUNCTION
+def find_radius(data, xc, yc, brightness):
+   
+   r = 1
+   tmp = np.copy(data)
+   a,b = xc, yc
+   nx,ny = data.shape
+   y,x = np.ogrid[-a:nx-a,-b:ny-b]
+   mask = x*x + y*y >= r*r
+   tmp[mask] = 1
+   tmpcircle = np.ma.masked_array(tmp,mask)
+   
+   # Define data inside the circle as a temp searching area
+   while tmpcircle.__contains__(0) == False:
+       r+=1
+       tmp = np.copy(data)
+       a,b = xc, yc
+       nx,ny = data.shape
+       y,x = np.ogrid[-a:nx-a,-b:ny-b]
+       mask = x*x + y*y >= r*r
+       tmp[mask] = 1
+       tmpcircle = np.ma.masked_array(tmp,mask)
+
+   return r
+    
+def count_galaxies_t(data):
+    
+    fig, ax = plt.subplots(figsize=(10,8))
+    ax.imshow(data, norm=LogNorm(), origin='lower')
+    pos = find_next_brightest(data)
+    brightest = data[pos[0], pos[1]]
+    count = 0
+    r = 30
+    
+    while brightest > 0:
+
+        pos = find_next_brightest(data)
+        brightest = data[pos[0], pos[1]]
+        if brightest == 0:
+            break
+        else:
+            yc, xc = locate_centre(data, pos[0], pos[1])
+            c = plt.Circle((xc,yc), r, color='red', fill=False)
+            ax.add_artist(c)
+            data = bin_data((xc, yc), data, r)
+            count+=1
+            
+    return count, data
+        
+ 
+def scan_horizontal(data, current_x, current_y):
+    cursor_r = current_x
+    cursor_l = current_x
+    y = current_y
+    
+    while data[cursor_r,y] != 0:
+        cursor_r += 1
+    
+    while data[cursor_l,y] != 0:
+        cursor_l -= 1
+        
+    mid = int((cursor_r-cursor_l)/2)
+    midpointx = cursor_l+mid
+    return midpointx
+
+
+def scan_vertical(data, current_x, current_y):
+    cursor_u = current_y
+    cursor_d = current_y
+    x = current_x
+    
+    while data[x, cursor_u] != 0:
+        cursor_u += 1
+    
+    while data[x, cursor_d] != 0:
+        cursor_d -= 1
+        
+    mid = int((cursor_u-cursor_d)/2)
+    midpointy = cursor_d+mid
+    return midpointy
     
