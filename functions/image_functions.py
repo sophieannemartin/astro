@@ -10,6 +10,7 @@ import numpy as np
 import numpy.ma as ma
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
+from astropy.io import fits
 
 def remove_edges(width, data):
     
@@ -123,6 +124,35 @@ def bin_data(co_ordinates, data, r):
     data = np.ma.masked_array(data,mask)
     return data
 
+
+def scan_horizontal(data, current_x, current_y):
+    cursor_r = current_x
+    cursor_l = current_x
+    y = current_y
+    
+    while data[cursor_r,y] != 0:
+        cursor_r += 1
+    
+    while data[cursor_l,y] != 0:
+        cursor_l -= 1
+        
+    return cursor_r, cursor_l
+
+
+def scan_vertical(data, current_x, current_y):
+    cursor_u = current_y
+    cursor_d = current_y
+    x = current_x
+    
+    while data[x, cursor_u] != 0:
+        cursor_u += 1
+    
+    while data[x, cursor_d] != 0:
+        cursor_d -= 1
+    
+    return cursor_u, cursor_d
+
+
 def locate_centre(data, x, y):
     left, right = scan_horizontal(data, x, y)
     mid = int((right-left)/2)
@@ -225,6 +255,7 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
     ax.imshow(data, norm=LogNorm(), origin='lower')
     pos = find_next_brightest(data)
     brightest = data[pos[0], pos[1]]
+    index = pos[1],pos[0]
     count = 0
     magnitudes = {}
     
@@ -232,7 +263,9 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
 
         pos = find_next_brightest(data)
         brightest = data[pos[0], pos[1]]
-        mag = find_magnitude(brightest)
+        print(index, r,data,bckg)
+        mag = magnitude(index,r,data,bckg,ZPinst=25.3)
+        print(mag)#value found from printing ZPinst from data
         if brightest == 0:
             break
         else:
@@ -244,32 +277,31 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
             magnitudes[count] = mag
         
     return count, magnitudes
-        
- 
-def scan_horizontal(data, current_x, current_y):
-    cursor_r = current_x
-    cursor_l = current_x
-    y = current_y
-    
-    while data[cursor_r,y] != 0:
-        cursor_r += 1
-    
-    while data[cursor_l,y] != 0:
-        cursor_l -= 1
-        
-    return cursor_r, cursor_l
 
 
-def scan_vertical(data, current_x, current_y):
-    cursor_u = current_y
-    cursor_d = current_y
-    x = current_x
+def magnitude(index,radius,data,local_bckg,ZPinst): #use xc,yc index 
+    total_intensity = 0
+    number_of_pixels = 0
     
-    while data[x, cursor_u] != 0:
-        cursor_u += 1
+    a,b = index #index takes the centre of the circle in the form (y,x)
+    nx,ny = data.shape
+    y,x = np.ogrid[-a:nx-a,-b:ny-b]
+    area = x*x + y*y <= radius*radius
+    print(area)
+    for i in area:
+        total_intensity += i
+        if i.all() != local_bckg: #might need to make this i!=local_bckg if not using remove_background
+            number_of_pixels += 1
     
-    while data[x, cursor_d] != 0:
-        cursor_d -= 1
+    intensity = total_intensity - local_bckg*number_of_pixels
+    m = -2.5*np.log10(intensity)
+    magnitude = ZPinst + m
     
-    return cursor_u, cursor_d
+    return magnitude
+    
+    
+    
+    
+    
+    
     

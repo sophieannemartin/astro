@@ -13,6 +13,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 hdulist = fits.open("A1_mosaic.fits")
+ZPinst = hdulist[0].header["MAGZPT"]
 pixelvalues = hdulist[0].data
 
 no_edges = image.remove_edges(115, pixelvalues)
@@ -104,4 +105,3 @@ def view_image_masked():
     plt.figure(4)
     plt.hist(no_background.compressed(), bins=300, range=(3300, 3600))
     
-view_image_masked()
