@@ -72,7 +72,7 @@ sigma = coeff[2]
 
 # Get the fitted curve
 hist_fit = gauss(bin_centres, *coeff)
-no_background = image.remove_background2(no_block3,mu+2*sigma)
+no_background = image.remove_background(no_block3,mu+5*sigma)
 
 def view_image_masked():
     plt.figure(1)
@@ -89,17 +89,19 @@ def view_image_masked():
     plt.figure(2)
     plt.hist(no_block3m, bins=300,range=(3300,3600), label='Histogram')
     plt.plot(bin_centres, hist_fit, label='Fitted data')
-    plt.plot([mu+2*sigma,mu+2*sigma], [0, max(hist)], '--')
+    plt.plot([mu+5*sigma,mu+5*sigma], [0, max(hist)], '--')
     plt.legend()
     plt.xlabel('Counts')
     plt.ylabel('Number of pixels')
     
-    #Removing background based on mean +- 2 standard deviations away
+    #Removing background based on mean +- 5 standard deviations away
     plt.figure(3)
-    plt.title('Data Removed')
+    plt.title('Data Removed to mu+5sigma')
     plt.imshow(no_background, norm=LogNorm(), origin = 'lower')
     plt.xlabel('Counts')
     plt.ylabel('Number of pixels')
     
     plt.figure(4)
     plt.hist(no_background.compressed(), bins=300, range=(3300, 3600))
+    
+view_image_masked()

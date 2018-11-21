@@ -8,12 +8,11 @@ Created on Tue Nov 20 20:50:27 2018
 
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
-from astropy.io import fits
 import functions.image_functions as image
-import numpy as np
-from run_image_mask import no_background
+from run_image_mask import no_block3, mu, sigma
 
-galaxies = no_background.filled(0)
+galaxies = no_block3.filled(0)
 plt.imshow(galaxies, norm=LogNorm(), origin='lower')
 
-count = image.count_galaxies_fixedr(galaxies, 30, 3450) # 4758
+count, data, magnitudes = image.count_galaxies_fixedr(galaxies, 6, mu+5*sigma) 
+# 4758 at r=30, used 6pixel radius from lab book

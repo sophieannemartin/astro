@@ -219,18 +219,20 @@ def count_galaxies_variabler(data):
     return count, data
 
     
-def count_galaxies_fixedr(data, r, bckg):
+def count_galaxies_fixedr(data, r, bckg): #uses a global background
     
     fig, ax = plt.subplots(figsize=(10,8))
     ax.imshow(data, norm=LogNorm(), origin='lower')
     pos = find_next_brightest(data)
     brightest = data[pos[0], pos[1]]
     count = 0
+    magnitudes = {}
     
     while brightest > bckg:
 
         pos = find_next_brightest(data)
         brightest = data[pos[0], pos[1]]
+        mag = find_magnitude(brightest)
         if brightest == 0:
             break
         else:
@@ -239,8 +241,9 @@ def count_galaxies_fixedr(data, r, bckg):
             ax.add_artist(c)
             data = bin_data((xc, yc), data, r)
             count+=1
+            magnitudes[count] = mag
         
-    return count, data
+    return count, magnitudes
         
  
 def scan_horizontal(data, current_x, current_y):
