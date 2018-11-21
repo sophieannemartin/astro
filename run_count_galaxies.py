@@ -11,8 +11,9 @@ import matplotlib.pyplot as plt
 import functions.image_functions as image
 from run_image_mask import no_block3, mu, sigma
 
-galaxies = no_block3.filled(0)
+global_background = mu+5*sigma
+galaxies = no_block3.filled(global_background)
 plt.imshow(galaxies, norm=LogNorm(), origin='lower')
 
-count, data, magnitudes = image.count_galaxies_fixedr(galaxies, 6, mu+5*sigma) 
+count, catalog = image.count_galaxies_fixedr2(galaxies, 6, global_background) 
 # 4758 at r=30, used 6pixel radius from lab book

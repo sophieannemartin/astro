@@ -7,13 +7,11 @@ Created on Mon Nov 12 15:10:58 2018
 """
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
-from astropy.io import fits
 import functions.image_functions as image
 import numpy as np
 from scipy.optimize import curve_fit
 
-hdulist = fits.open("A1_mosaic.fits")
-pixelvalues = hdulist[0].data
+pixelvalues = image.get_pixel_values()
 
 no_edges = image.remove_edges(115, pixelvalues)
 no_edgesf = no_edges.flatten()
@@ -94,7 +92,7 @@ def view_image_masked():
     plt.xlabel('Counts')
     plt.ylabel('Number of pixels')
     
-    #Removing background based on mean +- 5 standard deviations away
+    #Removing background based on mean +- 5 standard deviations away just to visualise
     plt.figure(3)
     plt.title('Data Removed to mu+5sigma')
     plt.imshow(no_background, norm=LogNorm(), origin = 'lower')
@@ -103,5 +101,3 @@ def view_image_masked():
     
     plt.figure(4)
     plt.hist(no_background.compressed(), bins=300, range=(3300, 3600))
-    
-view_image_masked()
