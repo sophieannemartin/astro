@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from astropy.io import fits
 
-
+# FUNCTIONS THAT GET THE DATA ITSELF
+# -----------------------------------
 def get_pixel_values(file="A1_mosaic.fits"):
     hdulist = fits.open(file)
     pixelvalues = hdulist[0].data
@@ -25,6 +26,8 @@ def get_zpinst(file="A1_mosaic.fits"):
     zperr = hdulist[0].header['MAGZRR']
     return zpinst, zperr
 
+# FUNCTIONS THAT MASK THE DATA
+# ------------------------------
 def remove_edges(width, data):
     
     """
@@ -68,18 +71,18 @@ def remove_star(index,radius,data):
     data_nostar = np.ma.masked_array(data,mask)
     return data_nostar
     
-def remove_background(data,mean):
+
+def remove_background(data, global_background):
+    """
+    Function to remove the background values and only leave the galaxy data
+    """
+    # Returns a masked array
     dataf = data.flatten()
-    mphigh = ma.masked_where(dataf <= mean, dataf)
+    mphigh = ma.masked_where(dataf <= global_background, dataf)
     no_background = np.reshape(mphigh, data.shape)
     return no_background
-
-def remove_background2(data, mean):
-    no_bckg = data.copy()
-    no_bckg[no_bckg <= mean] = 0
-    return no_bckg
-
     
+
 def remove_exp_bleeding1(x1,x2,y0,a,lamb,data):
     """
     Removes a section of data in exponential shape
@@ -106,30 +109,22 @@ def remove_exp_bleeding2(x1,x2,y0,a,lamb,data):
     data_noexp = np.ma.masked_array(data,mask)
     return data_noexp
 
-
-def max_pixel(data):
-    max_val = data.argmax()
-    return max_val
-
+# FUNCTIONS TO APPLY TO THE DATA ITSELF
+# -------------------------------------
 
 def find_next_brightest(data):
+    """
+    Returns the co-ordinates of next brightest pixel
+    """
     co_ords = np.unravel_index(np.argmax(data), data.shape)
     return co_ords
 
 
-def make_circle(co_ordinates, data, r):
-    # In the form y, x
-    a,b = co_ordinates[1], co_ordinates[0]
-    nx,ny = data.shape
-    y,x = np.ogrid[-a:nx-a,-b:ny-b]
-    mask = x*x + y*y >= r*r
-    tmp = np.copy(data)
-    tmp[mask] = 1
-    tmpcircle = np.ma.masked_array(tmp,mask)
-    return tmpcircle
-
-
 def bin_data(co_ordinates, data, r):
+    """
+    Removes the data within a circle of radius r - go to 0
+    Returns a masked array
+    """
     a,b = co_ordinates[1], co_ordinates[0]
     nx,ny = data.shape
     y,x = np.ogrid[-a:nx-a,-b:ny-b]
@@ -139,7 +134,48 @@ def bin_data(co_ordinates, data, r):
     return data_n
 
 
+def scan_horizontal(data, current_x, current_y, background):
+    """
+    Moves horizontally until the value == the background value
+    Returns the co_ordinates
+    Note: arrays work as rows by columns therefore x is the second element
+    """
+    cursor_r = current_x
+    cursor_l = current_x
+    y = current_y
+    
+    while data[y, cursor_r] != background:
+        cursor_r += 1
+    
+    while data[y, cursor_l] != background:
+        cursor_l -= 1
+        
+    return cursor_r, cursor_l
+
+
+def scan_vertical(data, current_x, current_y, background):
+    """
+    Moves vertically until the value == the background value
+    Returns the co_ordinates
+    Note: arrays work as rows by columns therefore x is the second element
+    """
+    cursor_u = current_y
+    cursor_d = current_y
+    x = current_x
+    
+    while data[cursor_u, x] != background:
+        cursor_u += 1
+    
+    while data[cursor_d, x] != background:
+        cursor_d -= 1
+    
+    return cursor_u, cursor_d
+    
+
 def locate_centre(data, x, y, bckg=0): # zero default
+    """
+    Locates the centre using the mid point of the scanning results
+    """
     left, right = scan_horizontal(data, x, y, bckg)
     mid = int((right-left)/2)
     x_mid = left+mid
@@ -149,43 +185,18 @@ def locate_centre(data, x, y, bckg=0): # zero default
     return x_mid, y_mid
 
 
-def count_galaxies(data):
-    
-    pos = find_next_brightest(data) # x and y are backwards
-    brightest = data[pos[0], pos[1]]
-    count = 0
-    r = 1
-    while brightest > 3450:
-
-        pos = find_next_brightest(data)
-        brightest = data[pos[0], pos[1]]
-        yc, xc = locate_centre(data, pos[0], pos[1])
-        search_area = make_circle((xc,yc), data, r)
-        
-        if ((len(search_area.compressed()))-np.count_nonzero(search_area.compressed())) != 0:
-            print('object found')
-            count+= 1
-            data = bin_data(pos, data, r)
-        
-        else:
-            print(search_area.compressed())
-            r += 1
-            continue
-            
-    return count
-
-
-# Zooming out function before counting an object MAIN FUNCTION
 def find_radius(data, xc, yc, brightness):
+    
+   # Zooming out function before counting an object
    """
-   WORK ON THE UPDATING OF DATA WHEN BINNING SINCE BIN DATA 
+   MUST WORK ON THE UPDATING OF DATA WHEN BINNING SINCE BIN DATA 
    CREATES ZEROS IN THE TMP CIRCLE ARRAYY SINCE IT COPIES DATA?
    """
    r = 1
    tmp = np.copy(data)
    a,b = xc, yc
    nx,ny = data.shape
-   y,x = np.ogrid[-a:nx-a,-b:ny-b]
+   y,x = np.ogrid[-a:nx-a,-b:ny-b] # In form y, x due to the column notation in python
    mask = x*x + y*y >= r*r
    tmp[mask] = 1
    tmpcircle = np.ma.masked_array(tmp,mask)
@@ -202,39 +213,7 @@ def find_radius(data, xc, yc, brightness):
        tmpcircle = np.ma.masked_array(tmp,mask)
        
    return r
-    
-#def calc_magnitude(x,y,radius,localbkgd = bckg, ZPinst=ZPinst):
-"DEFINE THE MAGNITUDES USING THEORY EQNS"
 
-def count_galaxies_variabler(data):
-    
-    data_o = data
-    fig, ax = plt.subplots(figsize=(10,8))
-    ax.imshow(data, norm=LogNorm(), origin='lower')
-    pos = find_next_brightest(data)
-    brightest = data[pos[0], pos[1]]
-    count = 0
-    
-    while brightest > 0:
-
-        pos = find_next_brightest(data)
-        brightest = data[pos[0], pos[1]]
-        if brightest == 0:
-            break
-        else:
-            yc, xc = locate_centre(data, pos[0], pos[1])
-            r = find_radius(data_o, xc, yc, brightest)
-            if r==1:
-                c = plt.Circle((xc,yc), r, color='blue', fill=False)
-                ax.add_artist(c)
-                data = bin_data((xc, yc), data, r)
-            else:
-                c = plt.Circle((xc,yc), r, color='red', fill=False)
-                ax.add_artist(c)
-                data = bin_data((xc, yc), data, r)
-                count+=1
-            
-    return count, data
 
 def annular_ref(data, co_ords, r):
     # do not change the data
@@ -265,47 +244,48 @@ def find_magnitude(data, co_ords, r, zpinst):
     total_counts = np.sum(np.array(tmp))
     total_pix = np.count_nonzero(np.array(tmp))
     mean_bkg  = annular_ref(data, co_ords, r)
-    source_counts = total_counts-mean_bkg*total_pix # subtracting the background
+    source_counts = total_counts-(mean_bkg*total_pix) # subtracting the background
     mag = -2.5*np.log10(source_counts)
     m = zpinst + mag
     return m, total_pix
 
-        
-def count_galaxies_fixedr(data, r, bckg): #uses a global background
+
+def count_galaxies_variabler(data):
     
+    data_o = data
     fig, ax = plt.subplots(figsize=(10,8))
     ax.imshow(data, norm=LogNorm(), origin='lower')
     pos = find_next_brightest(data)
-    brightest = data[pos[0], pos[1]]
+    brightest = data[pos]
     count = 0
-    catalog = pd.DataFrame(columns=['x', 'y', 'magnitude', 'total counts', 
-                                    'error', 'background', 'aperture_size'])
-    zpinst, zperr = get_zpinst()
     
-    while brightest > bckg:
+    while brightest > 0:
 
         pos = find_next_brightest(data)
-        brightest = data[pos[0], pos[1]]
-        if brightest == bckg:
+        brightest = data[pos]
+        if brightest == 0:
             break
         else:
-            yc, xc = locate_centre(data, pos[0], pos[1], bckg)
-            c = plt.Circle((xc,yc), r, color='red', fill=False)
-            mag, numberofpix = find_magnitude(data, (xc,yc), r, zpinst, bckg)
-            ax.add_artist(c)
-            data = bin_data((xc, yc), data, r)
-            count+=1
-            catalog.append({'x':xc, 'y':yc, 'magnitude':mag, 
-                            'total counts':numberofpix, 'error': zperr,
-                            'background':bckg, 'aperture_size':r}, ignore_index=True)        
-    return count, catalog
+            xc, yc = locate_centre(data, pos[1], pos[0])
+            r = find_radius(data_o, xc, yc, brightest)
+            if r==1:
+                c = plt.Circle((xc,yc), r, color='blue', fill=False)
+                ax.add_artist(c)
+                data = bin_data((xc, yc), data, r)
+            else:
+                c = plt.Circle((xc,yc), r, color='red', fill=False)
+                ax.add_artist(c)
+                data = bin_data((xc, yc), data, r)
+                count+=1
+            
+    return count, data
 
 
-def count_galaxies_fixedr2(data, r, bckg): #uses a global background
+def count_galaxies_fixedr(data, r, bckg): #uses a global background
     
     # does not need to do the locate centre
-    fig, ax = plt.subplots(figsize=(10,8))
-    ax.imshow(data, norm=LogNorm(), origin='lower')
+    #fig, ax = plt.subplots(figsize=(10,8))
+    #ax.imshow(data, norm=LogNorm(), origin='lower')
     pos = find_next_brightest(data)
     brightest = data[pos[0], pos[1]]
     count = 0
@@ -320,9 +300,9 @@ def count_galaxies_fixedr2(data, r, bckg): #uses a global background
         if brightest == bckg:
             break
         else:
-            c = plt.Circle((xc,yc), r, color='red', fill=False)
             mag, numberofpix = find_magnitude(data, (xc,yc), r, zpinst)
-            ax.add_artist(c)
+            #c = plt.Circle((xc,yc), r, color='red', fill=False)
+            #ax.add_artist(c)
             data = bin_data((xc, yc), data, r)
             pos = find_next_brightest(data)
             count+=1
@@ -331,31 +311,3 @@ def count_galaxies_fixedr2(data, r, bckg): #uses a global background
                             'background':bckg, 'aperture_size':r}, ignore_index=True)        
     return count, catalog
         
-
-def scan_horizontal(data, current_x, current_y, background):
-    cursor_r = current_x
-    cursor_l = current_x
-    y = current_y
-    
-    while data[cursor_r,y] != background:
-        cursor_r += 1
-    
-    while data[cursor_l,y] != background:
-        cursor_l -= 1
-        
-    return cursor_r, cursor_l
-
-
-def scan_vertical(data, current_x, current_y, background):
-    cursor_u = current_y
-    cursor_d = current_y
-    x = current_x
-    
-    while data[x, cursor_u] != background:
-        cursor_u += 1
-    
-    while data[x, cursor_d] != background:
-        cursor_d -= 1
-    
-    return cursor_u, cursor_d
-    
