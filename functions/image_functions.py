@@ -10,11 +10,8 @@ import numpy as np
 import numpy.ma as ma
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
-<<<<<<< HEAD
 from astropy.io import fits
-=======
 import pandas as pd
-from astropy.io import fits
 
 
 def get_pixel_values(file="A1_mosaic.fits"):
@@ -27,7 +24,6 @@ def get_zpinst(file="A1_mosaic.fits"):
     zpinst = hdulist[0].header['MAGZPT']
     zperr = hdulist[0].header['MAGZRR']
     return zpinst, zperr
->>>>>>> 46907b6f2cc21c2abb5ee7fc301c1f3b310ea9c4
 
 def remove_edges(width, data):
     
@@ -143,8 +139,6 @@ def bin_data(co_ordinates, data, r):
     return data_n
 
 
-<<<<<<< HEAD
-
 def scan_horizontal(data, current_x, current_y):
     cursor_r = current_x
     cursor_l = current_x
@@ -173,12 +167,8 @@ def scan_vertical(data, current_x, current_y):
     return cursor_u, cursor_d
 
 
-def locate_centre(data, x, y):
-    left, right = scan_horizontal(data, x, y)
-=======
 def locate_centre(data, x, y, bckg=0): # zero default
     left, right = scan_horizontal(data, x, y, bckg)
->>>>>>> 46907b6f2cc21c2abb5ee7fc301c1f3b310ea9c4
     mid = int((right-left)/2)
     x_mid = left+mid
     top, bottom = scan_vertical(data, x_mid, y, bckg)
@@ -325,14 +315,8 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
 
         pos = find_next_brightest(data)
         brightest = data[pos[0], pos[1]]
-<<<<<<< HEAD
-        print(index, r,data,bckg)
         mag = magnitude(index,r,data,bckg,ZPinst=25.3)
-        print(mag)#value found from printing ZPinst from data
-        if brightest == 0:
-=======
         if brightest == bckg:
->>>>>>> 46907b6f2cc21c2abb5ee7fc301c1f3b310ea9c4
             break
         else:
             yc, xc = locate_centre(data, pos[0], pos[1], bckg)
@@ -341,41 +325,9 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
             ax.add_artist(c)
             data = bin_data((xc, yc), data, r)
             count+=1
-<<<<<<< HEAD
             magnitudes[count] = mag
         
     return count, magnitudes
-
-
-def magnitude(index,radius,data,local_bckg,ZPinst): #use xc,yc index 
-    total_intensity = 0
-    number_of_pixels = 0
-    
-    a,b = index #index takes the centre of the circle in the form (y,x)
-    nx,ny = data.shape
-    y,x = np.ogrid[-a:nx-a,-b:ny-b]
-    area = x*x + y*y <= radius*radius
-    print(area)
-    for i in area:
-        total_intensity += i
-        if i.all() != local_bckg: #might need to make this i!=local_bckg if not using remove_background
-            number_of_pixels += 1
-    
-    intensity = total_intensity - local_bckg*number_of_pixels
-    m = -2.5*np.log10(intensity)
-    magnitude = ZPinst + m
-    
-    return magnitude
-    
-    
-    
-    
-    
-=======
-            catalog.append({'x':xc, 'y':yc, 'magnitude':mag, 
-                            'total counts':numberofpix, 'error': zperr,
-                            'background':bckg, 'aperture_size':r}, ignore_index=True)        
-    return count, catalog
 
 
 def count_galaxies_fixedr2(data, r, bckg): #uses a global background
@@ -433,6 +385,5 @@ def scan_vertical(data, current_x, current_y, background):
     
     while data[x, cursor_d] != background:
         cursor_d -= 1
->>>>>>> 46907b6f2cc21c2abb5ee7fc301c1f3b310ea9c4
     
     
