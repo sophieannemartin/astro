@@ -235,6 +235,7 @@ def annular_ref(data, co_ords, r):
     
     
 def find_magnitude(data, co_ords, r, zpinst):
+    issues = []
     # Do not alter the data yet!
     tmp = data.copy()
     # Look at certain part of the data
@@ -250,7 +251,10 @@ def find_magnitude(data, co_ords, r, zpinst):
     source_counts = total_counts-(mean_bkg*total_pix) # subtracting the background
     mag = -2.5*np.log10(source_counts)
     m = zpinst + mag
-    return m, total_pix
+    if source_counts<0:
+        print('oops')
+        issues.append(co_ords)
+    return m, total_pix, mean_bkg
 
 
 def count_galaxies_variabler(data):
@@ -295,22 +299,25 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
     catalog = pd.DataFrame(columns=['x', 'y', 'magnitude', 'total counts', 
                                     'error', 'background', 'aperture_size'])
     zpinst, zperr = get_zpinst()
+    local_backgrounds = [bckg]
     
     while brightest > bckg:
-        pos = find_next_brightest(data)
-        yc, xc = pos[0], pos[1]
-        brightest = data[pos]
-        if brightest <= bckg:
-            break
-        else:
-            mag, numberofpix = find_magnitude(data, (xc,yc), r, zpinst)
-            c = plt.Circle((xc,yc), r, color='red', fill=False)
-            ax.add_artist(c)
-            data = bin_data((xc, yc), data, r)
+        while brightest > local_backgrounds[-1]:
             pos = find_next_brightest(data)
-            count+=1
-            catalog = catalog.append({'x':xc, 'y':yc, 'magnitude':mag, 
-                            'total counts':numberofpix, 'error': zperr,
-                            'background':bckg, 'aperture_size':r}, ignore_index=True)        
-    return count, catalog
+            yc, xc = pos[0], pos[1]
+            brightest = data[pos]
+            if brightest <= bckg:
+                break
+            else:
+                mag, numberofpix, local_background = find_magnitude(data, (xc,yc), r, zpinst)
+                local_backgrounds.append(local_background)
+                c = plt.Circle((xc,yc), r, color='red', fill=False)
+                ax.add_artist(c)
+                data = bin_data((xc, yc), data, r)
+                pos = find_next_brightest(data)
+                count+=1
+                catalog = catalog.append({'x':xc, 'y':yc, 'magnitude':mag, 
+                                'total counts':numberofpix, 'error': zperr,
+                                'background':bckg, 'aperture_size':r}, ignore_index=True)        
+            return count, catalog
         

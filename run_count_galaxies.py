@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import functions.image_functions as image
 from run_image_mask import no_block3, mu, sigma
 
-global_background = mu+5*sigma
+global_background = mu+7*sigma
 galaxies = no_block3.filled(global_background)
 
 '''
