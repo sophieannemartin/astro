@@ -202,7 +202,7 @@ def find_radius(data, xc, yc, bckg):
    tmpcircle = np.ma.masked_array(tmp,mask)
 
    # Define data inside the circle as a temp searching area
-   while tmpcircle.any() < 1:
+   while tmpcircle.any() < 10:
        print(r)
        r+=1
        tmp = np.copy(data)
@@ -211,10 +211,7 @@ def find_radius(data, xc, yc, bckg):
        y,x = np.ogrid[-a:nx-a,-b:ny-b]
        mask = x*x + y*y >= r*r # mask everything outside
        tmp[mask] = 1
-       tmpcircle = np.ma.masked_array(tmp,mask).filled(0)
-       plt.figure()
-       plt.imshow(tmpcircle, norm=LogNorm(), origin='lower')
-       plt.show()
+       tmpcircle = np.ma.masked_array(tmp,mask).filled(10)
    return r
 
 
