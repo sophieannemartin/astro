@@ -28,4 +28,4 @@ def save_heights(df):
 def save_log_data(catalog, range_, bins):
     df = create_histogram_heights
     save_heights(df)
-    return ddf
+    return df
