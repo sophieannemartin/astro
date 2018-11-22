@@ -223,16 +223,18 @@ def annular_ref(data, co_ords, r):
     a,b = co_ords[1], co_ords[0]
     nx,ny = tmp.shape
     y,x = np.ogrid[-a:nx-a,-b:ny-b]
-    mask = x*x + y*y <= inner_r*inner_r # get rid of data inside current circle
-    mask = x*x + y*y >= outer_r*outer_r # get rid of data outside annulus
-    tmp[mask] = 1
-    annulus = np.ma.masked_array(tmp,mask)
+    mask1 = x*x + y*y <= inner_r*inner_r # get rid of data inside current circle
+    mask2 = x*x + y*y >= outer_r*outer_r # get rid of data outside annulus
+    tmp[mask1] = 1
+    tmp[mask2] = 1
+    annulus = np.ma.masked_array(tmp,mask1).filled(0)
+    annulus = np.ma.masked_array(annulus, mask2).filled(0)
     # Find mean of the values of the data left
-    mean_bckg = np.mean(np.array(annulus))
+    mean_bckg = np.mean(np.array(np.nonzero(annulus)))
     return mean_bckg
     
     
-def find_magnitude(data, co_ords, r, zpinst, global_background):
+def find_magnitude(data, co_ords, r, zpinst):
     # Do not alter the data yet!
     tmp = data.copy()
     # Look at certain part of the data
@@ -244,8 +246,8 @@ def find_magnitude(data, co_ords, r, zpinst, global_background):
     # Count the values of the data left
     total_counts = np.sum(tmp)
     total_pix = np.count_nonzero(tmp)
-    #mean_bkg  = annular_ref(data, co_ords, r)
-    source_counts = total_counts-(global_background*total_pix) # subtracting the background
+    mean_bkg  = annular_ref(data, co_ords, r)
+    source_counts = total_counts-(mean_bkg*total_pix) # subtracting the background
     mag = -2.5*np.log10(source_counts)
     m = zpinst + mag
     return m, total_pix
@@ -301,7 +303,7 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
         if brightest <= bckg:
             break
         else:
-            mag, numberofpix = find_magnitude(data, (xc,yc), r, zpinst, bckg)
+            mag, numberofpix = find_magnitude(data, (xc,yc), r, zpinst)
             c = plt.Circle((xc,yc), r, color='red', fill=False)
             ax.add_artist(c)
             data = bin_data((xc, yc), data, r)
