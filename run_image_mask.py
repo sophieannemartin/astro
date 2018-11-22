@@ -102,5 +102,3 @@ def view_image_masked():
     
     plt.figure(4)
     plt.hist(no_background.compressed(), bins=300, range=(3300, 3600))
-    
-view_image_masked()

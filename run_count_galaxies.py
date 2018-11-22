@@ -18,7 +18,7 @@ for s in range(2,6):
     global_background = mu+s*sigma
     galaxies = no_block3.filled(global_background) # background or 0 (what value should the masked bits be given)
     plt.imshow(galaxies, norm=LogNorm(), origin='lower')
-
+    print('galaxy done s= %d' %s)
     count, catalog = image.count_galaxies_fixedr(galaxies, 6, global_background)
     catalogs.append(catalog)
 # 4758 at r=30, used 6pixel radius from lab book
