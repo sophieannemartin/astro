@@ -144,11 +144,17 @@ def scan_horizontal(data, current_x, current_y, background):
     cursor_l = current_x
     y = current_y
     
-    while data[y, cursor_r] < background:
-        cursor_r += 1
+    while data[y, cursor_r] > background:
+        if cursor_r < data.shape[1]-1 and cursor_r>0:
+            cursor_r += 1
+        else:
+            break
     
-    while data[y, cursor_l] < background:
-        cursor_l -= 1
+    while data[y, cursor_l] > background and cursor_l>0:
+        if cursor_l < data.shape[1]-1:
+            cursor_l -= 1
+        else:
+            break
         
     return cursor_r, cursor_l
 
@@ -163,11 +169,17 @@ def scan_vertical(data, current_x, current_y, background):
     cursor_d = current_y
     x = current_x
     
-    while data[cursor_u, x] < background:
-        cursor_u += 1
+    while data[cursor_u, x] > background and cursor_u>0:
+        if cursor_u < data.shape[0]-1:
+            cursor_u += 1
+        else:
+            break
     
-    while data[cursor_d, x] < background:
-        cursor_d -= 1
+    while data[cursor_d, x] > background and cursor_d>0:
+        if cursor_d < data.shape[0]-1:
+            cursor_d -= 1
+        else:
+            break
     
     return cursor_u, cursor_d
     
@@ -198,23 +210,46 @@ def find_radius(data, xc, yc, bckg):
    nx,ny = data.shape
    y,x = np.ogrid[-a:nx-a,-b:ny-b] # In form y, x due to the column notation in python
    mask = x*x + y*y >= r*r
-   tmp[mask] = 1
-   tmpcircle = np.ma.masked_array(tmp,mask)
+   tmp[mask] = bckg
+   tmp = np.ma.masked_array(tmp,mask).filled(bckg)
 
    # Define data inside the circle as a temp searching area
-   while tmpcircle.any() < 10:
-       print(r)
+   while np.amin(tmp) >= bckg:
        r+=1
        tmp = np.copy(data)
        a,b = yc, xc
        nx,ny = data.shape
        y,x = np.ogrid[-a:nx-a,-b:ny-b]
-       mask = x*x + y*y >= r*r # mask everything outside
-       tmp[mask] = 1
-       tmpcircle = np.ma.masked_array(tmp,mask).filled(10)
+       mask = x*x + y*y >= r*r # mask everything outside with bckg
+       tmp[mask] = bckg
+       tmp = np.ma.masked_array(tmp,mask).filled(bckg)
    return r
 
-
+def scan_radius(data, xc, yc, bckg):
+    
+   # Zooming out function before counting an object
+   """
+   MUST WORK ON THE UPDATING OF DATA WHEN BINNING SINCE BIN DATA 
+   CREATES ZEROS IN THE TMP CIRCLE ARRAYY SINCE IT COPIES DATA?
+   """
+   
+   radii = []
+   
+   left, right = scan_horizontal(data, xc, yc, bckg)
+   up, down = scan_vertical(data, xc, yc, bckg)
+   dist_left = xc-left
+   dist_right = right-xc
+   dist_up = up-yc
+   dist_down = yc-down
+   radii.append(dist_left)
+   radii.append(dist_right)
+   radii.append(dist_up)
+   radii.append(dist_down)
+   
+   radius = max(radii)
+   return radius
+   
+   
 def annular_ref(data, co_ords, r):
     # do not change the data
     tmp = data.copy()
@@ -224,6 +259,24 @@ def annular_ref(data, co_ords, r):
     nx,ny = tmp.shape
     y,x = np.ogrid[-a:nx-a,-b:ny-b]
     mask1 = x*x + y*y <= inner_r*inner_r # get rid of data inside current circle
+    mask2 = x*x + y*y >= outer_r*outer_r # get rid of data outside annulus
+    tmp[mask1] = 1
+    tmp[mask2] = 1
+    annulus = np.ma.masked_array(tmp,mask1).filled(0)
+    annulus = np.ma.masked_array(annulus, mask2).filled(0)
+    # Find mean of the values of the data left
+    mean_bckg = np.mean(np.array(np.nonzero(annulus)))
+    return mean_bckg
+
+
+def annular_ref_vary(data, co_ords, r):
+    # do not change the data
+    tmp = data.copy()
+    outer_r = r+(0.5*r) #1/2r + the radius
+    a,b = co_ords[1], co_ords[0]
+    nx,ny = tmp.shape
+    y,x = np.ogrid[-a:nx-a,-b:ny-b]
+    mask1 = x*x + y*y <= r*r # get rid of data inside current circle
     mask2 = x*x + y*y >= outer_r*outer_r # get rid of data outside annulus
     tmp[mask1] = 1
     tmp[mask2] = 1
@@ -254,6 +307,26 @@ def find_magnitude(data, co_ords, r, zpinst):
     m = zpinst + mag
     return m, total_pix, mean_bkg
 
+def find_magnitude_vary(data, co_ords, r, zpinst):
+    # Do not alter the data yet!
+    tmp = data.copy()
+    # Look at certain part of the data
+    a,b = co_ords[1], co_ords[0]
+    nx,ny = tmp.shape
+    y,x = np.ogrid[-a:nx-a,-b:ny-b]
+    mask = x*x + y*y >= r*r # get rid of data outside current circle
+    tmp = np.ma.masked_array(tmp,mask).filled(0)
+    # Count the values of the data left
+    total_counts = np.sum(tmp)
+    total_pix = np.count_nonzero(tmp)
+    mean_bkg  = annular_ref_vary(data, co_ords, r)
+    source_counts = total_counts-(mean_bkg*total_pix) # subtracting the background
+    mag = -2.5*np.log10(source_counts)
+    if source_counts <0:
+        print('oops')
+    m = zpinst + mag
+    return m, total_pix, mean_bkg
+
 
 def count_galaxies_variabler(data, bckg):
     
@@ -273,14 +346,14 @@ def count_galaxies_variabler(data, bckg):
         if brightest <= bckg:
             break
         else:
-            xc, yc = locate_centre(data, pos[1], pos[0])
-            r = find_radius(data_o, xc, yc, bckg)
+            xc, yc = pos[1], pos[0]
+            r = scan_radius(data_o, xc, yc, bckg)
             if r==1:
                 c = plt.Circle((xc,yc), r, color='blue', fill=False)
                 ax.add_artist(c)
                 data = bin_data((xc, yc), data, r)
             else:
-                mag, numberofpix, local_bckg= find_magnitude(data, (xc,yc), r, zpinst)
+                mag, numberofpix, local_bckg = find_magnitude_vary(data, (xc,yc), r, zpinst)
                 c = plt.Circle((xc,yc), r, color='red', fill=False)
                 ax.add_artist(c)
                 data = bin_data((xc, yc), data, r)

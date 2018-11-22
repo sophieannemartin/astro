@@ -31,5 +31,5 @@ for s in range(2,6):
 # 4758 at r=30, used 6pixel radius from lab book
     '''
     
-count, catalog = image.count_galaxies_fixedr(galaxies, 6, global_background)
+count, catalog = image.count_galaxies_variabler(galaxies, global_background)
     
