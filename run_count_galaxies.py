@@ -10,7 +10,9 @@ from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import functions.image_functions as image
 from run_image_mask import no_block3, mu, sigma
+from astropy.io import fits
 
+<<<<<<< HEAD
 global_background = mu+6*sigma
 catalogs = []
 
@@ -22,3 +24,16 @@ for s in range(2,6):
     count, catalog = image.count_galaxies_fixedr(galaxies, 6, global_background)
     catalogs.append(catalog)
 # 4758 at r=30, used 6pixel radius from lab book
+=======
+global_background = mu+5*sigma
+galaxies = no_block3.filled(global_background)
+#plt.imshow(galaxies, norm=LogNorm(), origin='lower')
+
+hdulist = fits.open('A1_mosaic_crop.fits')
+test = hdulist[0].data
+
+#count, catalog = image.count_galaxies_fixedr2(galaxies, 6, global_background) 
+# 4758 at r=30, used 6pixel radius from lab book
+
+count, catalog = image.count_galaxies_fixedr2(test, 6, global_background) 
+>>>>>>> 6834312374dfbf4de608bfc5033447fc9b480343

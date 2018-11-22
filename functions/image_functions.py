@@ -10,8 +10,8 @@ import numpy as np
 import numpy.ma as ma
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
-import pandas as pd
 from astropy.io import fits
+import pandas as pd
 
 # FUNCTIONS THAT GET THE DATA ITSELF
 # -----------------------------------
@@ -134,35 +134,51 @@ def bin_data(co_ordinates, data, r):
     return data_n
 
 
+<<<<<<< HEAD
 def scan_horizontal(data, current_x, current_y, background):
     """
     Moves horizontally until the value == the background value
     Returns the co_ordinates
     Note: arrays work as rows by columns therefore x is the second element
     """
+=======
+def scan_horizontal(data, current_x, current_y):
+>>>>>>> 6834312374dfbf4de608bfc5033447fc9b480343
     cursor_r = current_x
     cursor_l = current_x
     y = current_y
     
+<<<<<<< HEAD
     while data[y, cursor_r] != background:
         cursor_r += 1
     
     while data[y, cursor_l] != background:
+=======
+    while data[cursor_r,y] != 0:
+        cursor_r += 1
+    
+    while data[cursor_l,y] != 0:
+>>>>>>> 6834312374dfbf4de608bfc5033447fc9b480343
         cursor_l -= 1
         
     return cursor_r, cursor_l
 
 
+<<<<<<< HEAD
 def scan_vertical(data, current_x, current_y, background):
     """
     Moves vertically until the value == the background value
     Returns the co_ordinates
     Note: arrays work as rows by columns therefore x is the second element
     """
+=======
+def scan_vertical(data, current_x, current_y):
+>>>>>>> 6834312374dfbf4de608bfc5033447fc9b480343
     cursor_u = current_y
     cursor_d = current_y
     x = current_x
     
+<<<<<<< HEAD
     while data[cursor_u, x] != background:
         cursor_u += 1
     
@@ -171,6 +187,16 @@ def scan_vertical(data, current_x, current_y, background):
     
     return cursor_u, cursor_d
     
+=======
+    while data[x, cursor_u] != 0:
+        cursor_u += 1
+    
+    while data[x, cursor_d] != 0:
+        cursor_d -= 1
+    
+    return cursor_u, cursor_d
+
+>>>>>>> 6834312374dfbf4de608bfc5033447fc9b480343
 
 def locate_centre(data, x, y, bckg=0): # zero default
     """
@@ -256,12 +282,18 @@ def count_galaxies_variabler(data):
     fig, ax = plt.subplots(figsize=(10,8))
     ax.imshow(data, norm=LogNorm(), origin='lower')
     pos = find_next_brightest(data)
+<<<<<<< HEAD
     brightest = data[pos]
+=======
+    brightest = data[pos[0], pos[1]]
+    index = pos[1],pos[0]
+>>>>>>> 6834312374dfbf4de608bfc5033447fc9b480343
     count = 0
     
     while brightest > 0:
 
         pos = find_next_brightest(data)
+<<<<<<< HEAD
         brightest = data[pos]
         if brightest == 0:
             break
@@ -279,6 +311,22 @@ def count_galaxies_variabler(data):
                 count+=1
             
     return count, data
+=======
+        brightest = data[pos[0], pos[1]]
+        mag = magnitude(index,r,data,bckg,ZPinst=25.3)
+        if brightest == bckg:
+            break
+        else:
+            yc, xc = locate_centre(data, pos[0], pos[1], bckg)
+            c = plt.Circle((xc,yc), r, color='red', fill=False)
+            mag, numberofpix = find_magnitude(data, (xc,yc), r, zpinst, bckg)
+            ax.add_artist(c)
+            data = bin_data((xc, yc), data, r)
+            count+=1
+            magnitudes[count] = mag
+        
+    return count, magnitudes
+>>>>>>> 6834312374dfbf4de608bfc5033447fc9b480343
 
 
 def count_galaxies_fixedr(data, r, bckg): #uses a global background
@@ -310,4 +358,35 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
                             'total counts':numberofpix, 'error': zperr,
                             'background':bckg, 'aperture_size':r}, ignore_index=True)        
     return count, catalog
+<<<<<<< HEAD
         
+=======
+        
+
+def scan_horizontal(data, current_x, current_y, background):
+    cursor_r = current_x
+    cursor_l = current_x
+    y = current_y
+    
+    while data[cursor_r,y] != background:
+        cursor_r += 1
+    
+    while data[cursor_l,y] != background:
+        cursor_l -= 1
+        
+    return cursor_r, cursor_l
+
+
+def scan_vertical(data, current_x, current_y, background):
+    cursor_u = current_y
+    cursor_d = current_y
+    x = current_x
+    
+    while data[x, cursor_u] != background:
+        cursor_u += 1
+    
+    while data[x, cursor_d] != background:
+        cursor_d -= 1
+    
+    
+>>>>>>> 6834312374dfbf4de608bfc5033447fc9b480343

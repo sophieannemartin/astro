@@ -13,6 +13,7 @@ from scipy.optimize import curve_fit
 
 pixelvalues = image.get_pixel_values()
 
+
 no_edges = image.remove_edges(115, pixelvalues)
 no_edgesf = no_edges.flatten()
 
@@ -102,3 +103,4 @@ def view_image_masked():
     
     plt.figure(4)
     plt.hist(no_background.compressed(), bins=300, range=(3300, 3600))
+    
