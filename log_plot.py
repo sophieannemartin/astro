@@ -9,7 +9,9 @@ Created on Wed Nov 21 21:39:02 2018
 import numpy as np
 import pandas as pd
 
-def create_histogram_heights(catalog, range_, bins):
+def create_histogram_heights(filepath, range_, bins):
+    
+    catalog = pd.read_excel(filepath)
     
     # a dataframe
     hist_heights, edges = np.histogram(catalog['magnitude'].values, 
