@@ -9,10 +9,7 @@ Created on Wed Nov 21 21:39:02 2018
 import numpy as np
 import pandas as pd
 
-def create_histogram_heights(filepath, range_, bins):
-    
-    catalog = pd.read_excel(filepath)
-    
+def create_histogram_heights(catalog, range_, bins):
     # a dataframe
     hist_heights, edges = np.histogram(catalog['magnitude'].values, 
                                range=(range_[0], range_[1]), bins=bins)
@@ -27,7 +24,8 @@ def save_heights(df):
     writer.save()
     
     
-def save_log_data(catalog, range_, bins):
-    df = create_histogram_heights
+def save_log_data(filepath, range_, bins):
+    catalog = pd.read_excel(filepath)
+    df = create_histogram_heights(catalog, (8,20), 50)
     save_heights(df)
     return df
