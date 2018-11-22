@@ -12,6 +12,9 @@ import functions.image_functions as image
 from run_image_mask import no_block3, mu, sigma
 
 global_background = mu+6*sigma
+galaxies = no_block3.filled(global_background)
+
+'''
 catalogs = []
 
 for s in range(2,6):
@@ -22,3 +25,7 @@ for s in range(2,6):
     count, catalog = image.count_galaxies_fixedr(galaxies, 6, global_background)
     catalogs.append(catalog)
 # 4758 at r=30, used 6pixel radius from lab book
+    '''
+    
+count, catalog = image.count_galaxies_fixedr(galaxies, 6, global_background)
+    

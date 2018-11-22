@@ -218,12 +218,13 @@ def find_radius(data, xc, yc, brightness):
 def annular_ref(data, co_ords, r):
     # do not change the data
     tmp = data.copy()
-    ref_r = 2*r#twice the radius
+    inner_r = 2*r
+    outer_r = 4*r#twice the radius
     a,b = co_ords[1], co_ords[0]
     nx,ny = tmp.shape
     y,x = np.ogrid[-a:nx-a,-b:ny-b]
-    mask = x*x + y*y <= r*r # get rid of data inside current circle
-    mask = x*x + y*y >= ref_r*ref_r # get rid of data outside annulus
+    mask = x*x + y*y <= inner_r*inner_r # get rid of data inside current circle
+    mask = x*x + y*y >= outer_r*outer_r # get rid of data outside annulus
     tmp[mask] = 1
     annulus = np.ma.masked_array(tmp,mask)
     # Find mean of the values of the data left
@@ -231,7 +232,7 @@ def annular_ref(data, co_ords, r):
     return mean_bckg
     
     
-def find_magnitude(data, co_ords, r, zpinst):
+def find_magnitude(data, co_ords, r, zpinst, global_background):
     # Do not alter the data yet!
     tmp = data.copy()
     # Look at certain part of the data
@@ -239,12 +240,12 @@ def find_magnitude(data, co_ords, r, zpinst):
     nx,ny = tmp.shape
     y,x = np.ogrid[-a:nx-a,-b:ny-b]
     mask = x*x + y*y >= r*r # get rid of data outside current circle
-    tmp = np.ma.masked_array(tmp,mask)
+    tmp = np.ma.masked_array(tmp,mask).filled(0)
     # Count the values of the data left
-    total_counts = np.sum(np.array(tmp))
-    total_pix = np.count_nonzero(np.array(tmp))
-    mean_bkg  = annular_ref(data, co_ords, r)
-    source_counts = total_counts-(mean_bkg*total_pix) # subtracting the background
+    total_counts = np.sum(tmp)
+    total_pix = np.count_nonzero(tmp)
+    #mean_bkg  = annular_ref(data, co_ords, r)
+    source_counts = total_counts-(global_background*total_pix) # subtracting the background
     mag = -2.5*np.log10(source_counts)
     m = zpinst + mag
     return m, total_pix
@@ -284,8 +285,8 @@ def count_galaxies_variabler(data):
 def count_galaxies_fixedr(data, r, bckg): #uses a global background
     
     # does not need to do the locate centre
-    #fig, ax = plt.subplots(figsize=(10,8))
-    #ax.imshow(data, norm=LogNorm(), origin='lower')
+    fig, ax = plt.subplots(figsize=(10,8))
+    ax.imshow(data, norm=LogNorm(), origin='lower')
     pos = find_next_brightest(data)
     brightest = data[pos[0], pos[1]]
     count = 0
@@ -297,12 +298,12 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
         pos = find_next_brightest(data)
         yc, xc = pos[0], pos[1]
         brightest = data[pos]
-        if brightest == bckg:
+        if brightest <= bckg:
             break
         else:
-            mag, numberofpix = find_magnitude(data, (xc,yc), r, zpinst)
-            #c = plt.Circle((xc,yc), r, color='red', fill=False)
-            #ax.add_artist(c)
+            mag, numberofpix = find_magnitude(data, (xc,yc), r, zpinst, bckg)
+            c = plt.Circle((xc,yc), r, color='red', fill=False)
+            ax.add_artist(c)
             data = bin_data((xc, yc), data, r)
             pos = find_next_brightest(data)
             count+=1
