@@ -301,23 +301,22 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
     zpinst, zperr = get_zpinst()
     local_backgrounds = [bckg]
     
-    while brightest > bckg:
-        while brightest > local_backgrounds[-1]:
+    while brightest > bckg and brightest > local_backgrounds[-1]:
+        pos = find_next_brightest(data)
+        yc, xc = pos[0], pos[1]
+        brightest = data[pos]
+        if brightest <= bckg:
+            break
+        else:
+            mag, numberofpix, local_background = find_magnitude(data, (xc,yc), r, zpinst)
+            local_backgrounds.append(local_background)
+            c = plt.Circle((xc,yc), r, color='red', fill=False)
+            ax.add_artist(c)
+            data = bin_data((xc, yc), data, r)
             pos = find_next_brightest(data)
-            yc, xc = pos[0], pos[1]
-            brightest = data[pos]
-            if brightest <= bckg:
-                break
-            else:
-                mag, numberofpix, local_background = find_magnitude(data, (xc,yc), r, zpinst)
-                local_backgrounds.append(local_background)
-                c = plt.Circle((xc,yc), r, color='red', fill=False)
-                ax.add_artist(c)
-                data = bin_data((xc, yc), data, r)
-                pos = find_next_brightest(data)
-                count+=1
-                catalog = catalog.append({'x':xc, 'y':yc, 'magnitude':mag, 
-                                'total counts':numberofpix, 'error': zperr,
-                                'background':bckg, 'aperture_size':r}, ignore_index=True)        
-            return count, catalog
+            count+=1
+            catalog = catalog.append({'x':xc, 'y':yc, 'magnitude':mag, 
+                            'total counts':numberofpix, 'error': zperr,
+                            'background':bckg, 'aperture_size':r}, ignore_index=True)        
+    return count, catalog
         
