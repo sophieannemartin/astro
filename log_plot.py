@@ -18,7 +18,6 @@ def create_histogram_heights(catalog, range_, bins):
     return df
 
 def save_heights(df):
-    
     writer = pd.ExcelWriter('histogram_of_magnitudes.xlsx')
     df.to_excel(writer)
     writer.save()
@@ -26,6 +25,6 @@ def save_heights(df):
     
 def save_log_data(filepath, range_, bins):
     catalog = pd.read_excel(filepath)
-    df = create_histogram_heights(catalog, (8,20), 50)
+    df = create_histogram_heights(catalog, range_, bins)
     save_heights(df)
     return df
