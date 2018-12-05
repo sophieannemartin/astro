@@ -122,15 +122,15 @@ def find_next_brightest(data):
 
 def bin_data(co_ordinates, data, r):
     """
-    Removes the data within a circle of radius r - go to 0
+    Removes the data within a circle of radius r - go to 0 by default
     Returns a masked array
     """
     a,b = co_ordinates[1], co_ordinates[0]
     nx,ny = data.shape
     y,x = np.ogrid[-a:nx-a,-b:ny-b]
-    mask = x*x + y*y <= r*r # gets rid of current circle sets to null atm
+    mask = x*x + y*y <= r*r # gets rid of current circle sets to 0 atm
     data[mask] = 1
-    data_n = np.ma.masked_array(data,mask)
+    data_n = np.ma.masked_array(data,mask).filled(0)
     return data_n
 
 
@@ -148,12 +148,14 @@ def scan_horizontal(data, current_x, current_y, background):
         if cursor_r < data.shape[1]-1 and cursor_r>0:
             cursor_r += 1
         else:
+            cursor_r = 6
             break
     
     while data[y, cursor_l] > background and cursor_l>0:
         if cursor_l < data.shape[1]-1:
             cursor_l -= 1
         else:
+            cursor_l = 6
             break
         
     return cursor_r, cursor_l
@@ -173,12 +175,14 @@ def scan_vertical(data, current_x, current_y, background):
         if cursor_u < data.shape[0]-1:
             cursor_u += 1
         else:
+            cursor_u = 6
             break
     
     while data[cursor_d, x] > background and cursor_d>0:
         if cursor_d < data.shape[0]-1:
             cursor_d -= 1
         else:
+            cursor_d = 6
             break
     
     return cursor_u, cursor_d
@@ -229,8 +233,7 @@ def scan_radius(data, xc, yc, bckg):
     
    # Zooming out function before counting an object
    """
-   MUST WORK ON THE UPDATING OF DATA WHEN BINNING SINCE BIN DATA 
-   CREATES ZEROS IN THE TMP CIRCLE ARRAYY SINCE IT COPIES DATA?
+   SCANS UP DOWN LEFT RIGHT
    """
    
    radii = []
@@ -299,13 +302,12 @@ def find_magnitude(data, co_ords, r, zpinst):
     # Count the values of the data left
     total_counts = np.sum(tmp)
     total_pix = np.count_nonzero(tmp)
-    mean_bkg  = annular_ref(data, co_ords, r)
-    source_counts = total_counts-(mean_bkg*total_pix) # subtracting the background
+    mean_bckg = annular_ref(data, co_ords, r)
+    source_counts = total_counts-(mean_bckg*total_pix) # subtracting the background
     mag = -2.5*np.log10(source_counts)
-    if source_counts <0:
-        print('oops')
     m = zpinst + mag
-    return m, total_pix, mean_bkg
+    return m, total_pix, source_counts, mean_bckg
+
 
 def find_magnitude_vary(data, co_ords, r, zpinst):
     # Do not alter the data yet!
@@ -322,15 +324,13 @@ def find_magnitude_vary(data, co_ords, r, zpinst):
     mean_bkg  = annular_ref_vary(data, co_ords, r)
     source_counts = total_counts-(mean_bkg*total_pix) # subtracting the background
     mag = -2.5*np.log10(source_counts)
-    if source_counts <0:
-        print('oops')
     m = zpinst + mag
-    return m, total_pix, mean_bkg
+    return m, total_pix, source_counts, mean_bkg
 
 
-def count_galaxies_variabler(data, bckg):
+def count_galaxies_variabler(data, bckg): # variabler with local backgrounds
     
-    data_o = data
+    data_o = data # copy of the original data
     fig, ax = plt.subplots(figsize=(10,8))
     ax.imshow(data, norm=LogNorm(), origin='lower')
     pos = find_next_brightest(data)
@@ -338,6 +338,8 @@ def count_galaxies_variabler(data, bckg):
     count = 0
     local_backgrounds = [bckg]
     zpinst, zperr = get_zpinst()
+    catalog = pd.DataFrame(columns=['x', 'y', 'magnitude', 'total counts', 'sum',
+                                    'error', 'background', 'aperture_size'])
     
     while brightest > bckg and brightest > local_backgrounds[-1]:
 
@@ -353,16 +355,20 @@ def count_galaxies_variabler(data, bckg):
                 ax.add_artist(c)
                 data = bin_data((xc, yc), data, r)
             else:
-                mag, numberofpix, local_bckg = find_magnitude_vary(data, (xc,yc), r, zpinst)
+                mag, numberofpix, countsum, local_bckg = find_magnitude_vary(data, (xc,yc), r, zpinst)
                 c = plt.Circle((xc,yc), r, color='red', fill=False)
                 ax.add_artist(c)
                 data = bin_data((xc, yc), data, r)
                 count+=1
-            
-    return count, data
+                catalog = catalog.append({'x':xc, 'y':yc, 'magnitude':mag, 
+                'total counts':numberofpix, 'sum':countsum,
+                'error': zperr,
+                'background':local_bckg, 
+                'aperture_size':r}, ignore_index=True) 
+    return count, catalog
 
 
-def count_galaxies_fixedr_stop(data, r, bckg): #uses a global background
+def count_galaxies_fixedr_local(data, r, bckg): #uses a local background
     
     # does not need to do the locate centre
     fig, ax = plt.subplots(figsize=(10,8))
@@ -370,20 +376,19 @@ def count_galaxies_fixedr_stop(data, r, bckg): #uses a global background
     pos = find_next_brightest(data)
     brightest = data[pos[0], pos[1]]
     count = 0
-    catalog = pd.DataFrame(columns=['x', 'y', 'magnitude', 'total counts', 
+    catalog = pd.DataFrame(columns=['x', 'y', 'magnitude', 'total counts', 'sum', 
                                     'error', 'background', 'aperture_size'])
     zpinst, zperr = get_zpinst()
     local_backgrounds = [bckg]
     
     while brightest > bckg and brightest > local_backgrounds[-1]:
-        print(brightest, local_backgrounds[-1])
         pos = find_next_brightest(data)
         yc, xc = pos[0], pos[1]
         brightest = data[pos]
         if brightest <= bckg:
             break
         else:
-            mag, numberofpix, local_bckg= find_magnitude(data, (xc,yc), r, zpinst)
+            mag, numberofpix, countsum, local_bckg= find_magnitude(data, (xc,yc), r, zpinst)
             local_backgrounds.append(local_bckg)
             c = plt.Circle((xc,yc), r, color='red', fill=False)
             ax.add_artist(c)
@@ -391,12 +396,13 @@ def count_galaxies_fixedr_stop(data, r, bckg): #uses a global background
             pos = find_next_brightest(data)
             count+=1
             catalog = catalog.append({'x':xc, 'y':yc, 'magnitude':mag, 
-                            'total counts':numberofpix, 'error': zperr,
+                            'total counts':numberofpix, 'sum':countsum, 
+                            'error': zperr,
                             'background':local_bckg, 
                             'aperture_size':r}, ignore_index=True)        
     return count, catalog
 
-def count_galaxies_fixedr(data, r, bckg): #uses a global background
+def count_galaxies_fixedr_global(data, r, bckg): #uses a global background
     
     # does not need to do the locate centre
     fig, ax = plt.subplots(figsize=(10,8))
@@ -404,7 +410,7 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
     pos = find_next_brightest(data)
     brightest = data[pos[0], pos[1]]
     count = 0
-    catalog = pd.DataFrame(columns=['x', 'y', 'magnitude', 'total counts', 
+    catalog = pd.DataFrame(columns=['x', 'y', 'magnitude', 'total pixels', 'sum', 
                                     'error', 'background', 'aperture_size'])
     zpinst, zperr = get_zpinst()
     
@@ -415,16 +421,73 @@ def count_galaxies_fixedr(data, r, bckg): #uses a global background
         if brightest <= bckg:
             break
         else:
-            mag, numberofpix, local_bckg= find_magnitude(data, (xc,yc), r, zpinst)
+            mag, numberofpix, countsum, local_bckg = find_magnitude(data, (xc,yc), r, zpinst, bckg)
             c = plt.Circle((xc,yc), r, color='red', fill=False)
             ax.add_artist(c)
             data = bin_data((xc, yc), data, r)
             pos = find_next_brightest(data)
             count+=1
             catalog = catalog.append({'x':xc, 'y':yc, 'magnitude':mag, 
-                            'total counts':numberofpix, 'error': zperr,
-                            'background':local_bckg, 
-                            'aperture_size':r}, ignore_index=True)        
+                            'total pixels':numberofpix, 'sum':countsum, 
+                            'error': zperr,
+                            'background':bckg,  #globalbck
+                            'aperture_size':r}, ignore_index=True)
     return count, catalog
-  
+    
+    
+def count_intersections(catalog_filepath):
+    
+    data = get_pixel_values('/Users/sophie/Documents/Work/Year 3/Lab/Astro/A1_mosaic.fits')
+    df = pd.read_excel(catalog_filepath)
+    df['flag'] = 0
+    intersections = 0
+    fig, ax = plt.subplots(figsize=(10,8))
+    ax.imshow(data, norm=LogNorm(), origin='lower')
+    
+    for idx, rows in df.iterrows():
+        
+        tmp = df.drop(df.index[idx])
+        
+        for idx2, rows2 in tmp.iterrows():
+            
+            x1, y1 = rows['x'], rows['y']
+            x2, y2 = rows2['x'], rows2['y']
+            
+            d = ((x2-x1)**2+(y2-y1)**2)**0.5
+            
+            if d < rows['aperture_size']+rows2['aperture_size']:
+                c1= plt.Circle((x1,y1), rows['aperture_size'], 
+                               color='red', fill=False)
+                c2= plt.Circle((x2,y2), rows2['aperture_size'], 
+                               color='red', fill=False)
+                ax.add_artist(c1)
+                ax.add_artist(c2)
+                
+                if df.loc[idx, 'flag'] != 1: # do not double count yourself if youre already flagged
+                    intersections += 1
+                    df.loc[idx2, 'flag'] = 1
+                    # likely that the original one contains the galaxy so use idx2
+            
+            else:
+                continue
+            
+    return df, intersections
+
+
+def view_after_intersections(df):
+
+    data = get_pixel_values('/Users/sophie/Documents/Work/Year 3/Lab/Astro/A1_mosaic.fits')
+    fig2, ax2 = plt.subplots(figsize=(10,8))
+    ax2.imshow(data, norm=LogNorm(), origin='lower')
+    
+    df_new = df.loc[df['flag']==0]
+    for idx, rows in df_new.iterrows():
+        
+        x, y = rows['x'], rows['y']
+        c = plt.Circle((x,y), rows['aperture_size'], 
+                               color='green', fill=False)
+        ax2.add_artist(c)
+        
+    return df_new
+    
     
